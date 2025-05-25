@@ -1,18 +1,7 @@
 defmodule Applet do
-  @moduledoc """
-  Documentation for `Applet`.
-  """
+  def start(name, code) do
+  end
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Applet.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def stop(name) do
   end
 end
