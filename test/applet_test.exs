@@ -1,8 +1,10 @@
 defmodule AppletTest do
   use ExUnit.Case
-  doctest Applet
+  use Applet.Alias
+  use AssertEventually, timeout: 200, interval: 20
 
   test "start" do
-    assert Applet.start("name", "") == :ok
+    {:ok, pid} = Applet.start!("name", "1")
+    assert_eventually(fn -> assert [{:applet, ^pid, "name"}] = Multiple.list() end)
   end
 end

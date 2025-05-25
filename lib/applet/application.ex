@@ -8,7 +8,13 @@ defmodule Applet.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Applet.Dynamic
+      Applet.Multiple,
+      Applet.Dynamic,
+      Applet.Unique,
+      Applet.Store,
+      Applet.Bus,
+      Applet.Ddb,
+      Applet.Adb
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

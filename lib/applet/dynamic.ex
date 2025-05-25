@@ -7,11 +7,11 @@ defmodule Applet.Dynamic do
 
   # intensity defaults to 1 and period defaults to 5.
   # meaning: at most 1 restart each 5 seconds
-  # https://www.erlang.org/doc/system/sup_princ#max_intensity
+  # https://www.erlang.org/doc/system/sup_princ.html#maximum-restart-intensity
   # [strategy: :one_for_one, intensity: 2, period: 1]
-  # https://hexdocs.pm/elixir/Supervisor.html#module-restart-values-restart
+  # https://www.erlang.org/doc/system/sup_princ.html#child-specification
   # restart:
-  #   :permanent (always restarted)
+  #   :permanent (always restarted) DEFAULT
   #   :temporary (never restarted)
   #   :transient (restarted if abnormal)
   def init(:args) do
@@ -24,5 +24,10 @@ defmodule Applet.Dynamic do
 
   def terminate_child(pid) do
     DynamicSupervisor.terminate_child(__MODULE__, pid)
+  end
+
+  def which_children() do
+    # dynamic supervisor returns undefined id
+    DynamicSupervisor.which_children(__MODULE__)
   end
 end
