@@ -15,24 +15,25 @@ defmodule Applet.Runner do
     spec = %{id: {name, :tasks}, start: start, restart: :temporary}
     {:ok, tasks} = Dynamic.start_child(spec)
 
-    app = fn
-      {:await, task, timeout} ->
-        Task.await(task, timeout)
+    app =
+      fn
+        {:await, task, timeout} ->
+          Task.await(task, timeout)
 
-      {:async, fun} ->
-        app = Process.get(:__app__)
+        {:async, fun} ->
+          app = Process.get(:__app__)
 
-        Task.Supervisor.async(tasks, fn ->
-          Multiple.register!({:applet, name}, :async)
-          Process.put(:__app__, app)
-          fun.()
-        end)
-    end
+          Task.Supervisor.async(tasks, fn ->
+            Multiple.register!({:applet, name}, :async)
+            Process.put(:__app__, app)
+            fun.()
+          end)
+      end
 
     Process.put(:__app__, app)
 
     eval = fn ->
-      {result, bindings} = Code.eval_string(code, [], file: name)
+      {result, bindings} = Code.eval_string(code, [], file: "APPLET:#{name}")
       {result, bindings |> Enum.into(%{})}
     end
 

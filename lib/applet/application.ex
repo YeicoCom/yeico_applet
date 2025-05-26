@@ -14,7 +14,9 @@ defmodule Applet.Application do
       Applet.Store,
       Applet.Api.Bus,
       Applet.Api.Ddb,
-      Applet.Api.Adb
+      Applet.Api.Adb,
+      Applet.Api.Mdb,
+      Applet.Api.Udb
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

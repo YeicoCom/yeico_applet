@@ -3,6 +3,25 @@ defmodule AppletTest do
   use Applet.Alias
   import Eventually
 
+  setup do
+    eventually(20, 20, fn -> assert [] = Multiple.list() end)
+  end
+
+  test "empty applet" do
+    name = "empty"
+    code = ""
+
+    {:ok, pid} = Applet.start!(name, code)
+
+    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+
+    eventually(20, 20, fn ->
+      assert [{^pid, {:ok, {nil, %{}}}}] = Unique.lookup({:applet, name})
+    end)
+
+    :ok = Applet.stop!(name)
+  end
+
   test "async/bus applet" do
     name = "async/bus"
 
@@ -11,7 +30,10 @@ defmodule AppletTest do
 
     Api.async(fn ->
       Bus.subscribe!(:event, :sargs)
-      Api.async(fn -> Bus.broadcast(:event, :bargs) end)
+      Api.async(fn ->
+        Bus.broadcast!(:event, :bargs)
+        Api.sleep()
+      end)
       receive do
         {:event, :sargs, :bargs} -> :ok
       end
@@ -20,10 +42,66 @@ defmodule AppletTest do
 
     {:ok, pid} = Applet.start!(name, code)
 
-    eventually(10, 20, fn -> assert [{:applet, ^pid, ^name}] = Multiple.list() end)
+    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
 
-    eventually(10, 20, fn ->
+    eventually(20, 20, fn ->
       assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
+    end)
+
+    :ok = Applet.stop!(name)
+  end
+
+  test "tcp applet" do
+    name = "tcp"
+
+    code = """
+    use Applet.Api
+
+    Bus.subscribe!(:port)
+
+    Api.async(fn ->
+      serve = fn loop, client ->
+        case Tcp.read(client) do
+          {:error, :closed} ->
+            Api.debug("Tcp Echo Client \#{client.port}: closed")
+            :closed
+
+          {:ok, data} ->
+            Api.debug("Tcp Echo Client \#{client.port}: \#{data}")
+            :ok = Tcp.write(client, data)
+            loop.(loop, client)
+        end
+      end
+
+      accept = fn loop, server ->
+        {:ok, client} = Tcp.accept(server)
+        Api.info("Tcp Echo Client \#{client.port}")
+        task = Api.async(fn -> serve.(serve, client) end)
+        :ok = Tcp.owner(client, Api.pid(task))
+        loop.(loop, server)
+      end
+
+      {:ok, server} = Tcp.listen({127, 0, 0, 1}, 0, line: true)
+      Api.info("Tcp Echo Server \#{server.port}")
+      Bus.broadcast!(:port, server.port)
+      accept.(accept, server)
+    end)
+
+    port = receive do
+      {:port, nil, port} -> port
+    end
+
+    {:ok, client} = Tcp.connect({127, 0, 0, 1}, port, line: true)
+    :ok = Tcp.write(client, "ping\n")
+    {:ok, "ping\n"} = Tcp.read(client)
+    """
+
+    {:ok, pid} = Applet.start!(name, code)
+
+    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+
+    eventually(20, 20, fn ->
+      assert [{^pid, {:ok, {{:ok, "ping\n"}, %{}}}}] = Unique.lookup({:applet, name})
     end)
 
     :ok = Applet.stop!(name)
@@ -78,9 +156,9 @@ defmodule AppletTest do
 
     {:ok, pid} = Applet.start!(name, code)
 
-    eventually(10, 20, fn -> assert [{:applet, ^pid, ^name}] = Multiple.list() end)
+    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
 
-    eventually(10, 20, fn ->
+    eventually(20, 20, fn ->
       assert [{^pid, {:ok, {:ok, %{slave: _, port: _, model: _, master: _}}}}] =
                Unique.lookup({:applet, name})
     end)
