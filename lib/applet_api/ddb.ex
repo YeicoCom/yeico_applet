@@ -1,4 +1,4 @@
-defmodule Applet.Ddb do
+defmodule Applet.Api.Ddb do
   use Applet.Dets, table: "db_applet_api.dets"
   use GenServer
 

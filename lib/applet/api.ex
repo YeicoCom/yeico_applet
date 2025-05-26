@@ -1,11 +1,12 @@
 defmodule Applet.Api do
   defmacro __using__(_) do
     quote do
-      alias Applet.Bus
+      alias Applet.Api.Sup
+      alias Applet.Api.Bus
       # agent db
-      alias Applet.Adb
+      alias Applet.Api.Adb
       # dets db
-      alias Applet.Ddb
+      alias Applet.Api.Ddb
     end
   end
 end

@@ -12,6 +12,7 @@ defmodule Applet.Runner do
     Multiple.register!(:applet, name)
     # functions only to avoid poluting module space
     # spawn_link only to ensure proper cleanup
+    # do not change the pwd or any other environment
     eval = fn -> Code.eval_string(code, [], file: name) end
     result = Utils.run_safe(eval)
     Unique.update!({:applet, name}, result)

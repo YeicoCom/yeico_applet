@@ -1,4 +1,4 @@
-defmodule Applet.Bus do
+defmodule Applet.Api.Bus do
   def child_spec(_) do
     Registry.child_spec(keys: :duplicate, name: __MODULE__)
   end

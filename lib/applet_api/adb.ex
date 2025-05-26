@@ -1,4 +1,4 @@
-defmodule Applet.Adb do
+defmodule Applet.Api.Adb do
   use Agent
 
   def start_link(_) do

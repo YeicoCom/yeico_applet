@@ -12,9 +12,10 @@ defmodule Applet.Application do
       Applet.Dynamic,
       Applet.Unique,
       Applet.Store,
-      Applet.Bus,
-      Applet.Ddb,
-      Applet.Adb
+      Applet.Api.Bus,
+      Applet.Api.Ddb,
+      Applet.Api.Adb,
+      Applet.Api.Sup
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
