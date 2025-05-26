@@ -9,10 +9,13 @@ defmodule Applet do
     :ok = Store.delete(name)
   end
 
+  # functions only to avoid poluting module space
+  # spawn_link only to ensure proper cleanup
+  # do not change the pwd or any other environment
   def start!(name, code) do
     start = {Runner, :start_link, [name, code]}
     # temporary never restarted
-    # dynamic supervisor require but ignore id
+    # dynamic supervisor requires but ignores id
     spec = %{id: name, start: start, restart: :temporary}
     {:ok, _pid} = Dynamic.start_child(spec)
   end

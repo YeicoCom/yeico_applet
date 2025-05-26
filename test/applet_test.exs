@@ -1,7 +1,33 @@
 defmodule AppletTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   use Applet.Alias
   import Eventually
+
+  test "async/bus applet" do
+    name = "async/bus"
+
+    code = """
+    use Applet.Api
+
+    Api.async(fn ->
+      Bus.subscribe!(:event, :sargs)
+      Api.async(fn -> Bus.broadcast(:event, :bargs) end)
+      receive do
+        {:event, :sargs, :bargs} -> :ok
+      end
+    end) |> Api.await()
+    """
+
+    {:ok, pid} = Applet.start!(name, code)
+
+    eventually(10, 20, fn -> assert [{:applet, ^pid, ^name}] = Multiple.list() end)
+
+    eventually(10, 20, fn ->
+      assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
+    end)
+
+    :ok = Applet.stop!(name)
+  end
 
   test "modbus applet" do
     name = "modbus"
@@ -55,8 +81,10 @@ defmodule AppletTest do
     eventually(10, 20, fn -> assert [{:applet, ^pid, ^name}] = Multiple.list() end)
 
     eventually(10, 20, fn ->
-      assert [{^pid, {:ok, {:ok, [slave: _, port: _, model: _, master: _]}}}] =
+      assert [{^pid, {:ok, {:ok, %{slave: _, port: _, model: _, master: _}}}}] =
                Unique.lookup({:applet, name})
     end)
+
+    :ok = Applet.stop!(name)
   end
 end
