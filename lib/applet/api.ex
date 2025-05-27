@@ -8,6 +8,7 @@ defmodule Applet.Api do
       alias Applet.Api.Udb
       alias Applet.Api.Mdb
       alias Applet.Api.Tcp
+      alias Applet.Api.Udp
     end
   end
 

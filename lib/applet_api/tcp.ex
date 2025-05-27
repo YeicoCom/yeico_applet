@@ -4,17 +4,18 @@ defmodule Applet.Api.Tcp do
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
     opts = [:binary, packet: packet, active: active]
-    ip = if is_binary(ip), do: ~c"#{ip}", else: ip
+    ip = if is_binary(ip), do: parse(ip), else: ip
     {:ok, socket} = :gen_tcp.connect(ip, port, opts)
     {:ok, {ip, port}} = :inet.sockname(socket)
-    {:ok, %{ip: ip, port: port, socket: socket}}
+    {:ok, peer} = :inet.peername(socket)
+    {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
   end
 
   def listen(ip, port, opts \\ []) do
     line = Keyword.get(opts, :line, false)
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
-    ip = if is_binary(ip), do: ~c"#{ip}", else: ip
+    ip = if is_binary(ip), do: parse(ip), else: ip
     opts = [:binary, ip: ip, packet: packet, active: active, reuseaddr: true]
     {:ok, socket} = :gen_tcp.listen(port, opts)
     {:ok, {ip, port}} = :inet.sockname(socket)
@@ -36,11 +37,11 @@ defmodule Applet.Api.Tcp do
 
   def receive(%{socket: socket}) do
     receive do
-      {:tcp_closed, ^socket} ->
-        {:error, :closed}
-
       {:tcp, ^socket, data} ->
         {:ok, data}
+
+      {:tcp_closed, ^socket} ->
+        {:error, :closed}
     end
   end
 
@@ -54,5 +55,9 @@ defmodule Applet.Api.Tcp do
 
   def close(%{socket: socket}) do
     :gen_tcp.close(socket)
+  end
+
+  defp parse(ip) do
+    :inet.parse_address(~c"#{ip}") |> elem(1)
   end
 end
