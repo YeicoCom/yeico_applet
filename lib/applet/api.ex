@@ -1,7 +1,6 @@
 defmodule Applet.Api do
   defmacro __using__(_) do
     quote do
-      alias Applet.Api
       alias Applet.Api.Bus
       alias Applet.Api.Adb
       alias Applet.Api.Ddb
@@ -9,6 +8,7 @@ defmodule Applet.Api do
       alias Applet.Api.Mdb
       alias Applet.Api.Tcp
       alias Applet.Api.Udp
+      alias Applet.Api
     end
   end
 

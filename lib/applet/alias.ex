@@ -8,6 +8,7 @@ defmodule Applet.Alias do
       alias Applet.Store
       alias Applet.Utils
       alias Applet.Dets
+      alias Applet.Alias
     end
   end
 end

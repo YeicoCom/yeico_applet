@@ -1,3 +1,3 @@
 %{
-  "modbus": {:git, "https://github.com/samuelventura/modbus.git", "bce0267a3b2710e7050a184d5e11b3e839d99aa1", []},
+  "modbus": {:git, "https://github.com/samuelventura/modbus.git", "2388ce8549ac13ecfdb466e85bd3b8a21d3049ec", []},
 }
