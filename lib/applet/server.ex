@@ -9,8 +9,8 @@ defmodule Applet.Server do
     }
   end
 
-  def start_link(opts \\ []) do
-    port = Keyword.get(opts, :port, 3999)
+  def start_link() do
+    port = Application.get_env(:applet, __MODULE__)[:port]
     task = SuperTasks.async(Tasks, fn -> init(port) end)
     {:ok, Api.pid(task)}
   end

@@ -14,7 +14,8 @@ defmodule AppletServerTest do
   end
 
   test "applet server" do
-    {:ok, client} = Tcp.connect("127.0.0.1", 3999, line: true)
+    port = Application.get_env(:applet, Server)[:port]
+    {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "list saved\n")
     assert {:ok, "ok\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "list started\n")
