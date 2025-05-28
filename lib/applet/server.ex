@@ -22,13 +22,13 @@ defmodule Applet.Server do
     |> Enum.each(fn {n, d} -> Applet.start!(n, d) end)
 
     {:ok, server} = Tcp.listen("127.0.0.1", port, line: true)
-    Logger.info("Applet Server \#{server.port}")
+    Logger.info("Applet Server #{server.port}")
     accept(server)
   end
 
   defp accept(server) do
     {:ok, client} = Tcp.accept(server)
-    Logger.info("Applet Client \#{client.port}")
+    Logger.info("Applet Client #{client.port}")
     task = SuperTasks.async(Tasks, fn -> serve(client) end)
     :ok = Tcp.owner(client, Api.pid(task))
     accept(server)
