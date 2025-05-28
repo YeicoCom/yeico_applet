@@ -24,8 +24,8 @@ defmodule Applet.Api do
   def await(task, timeout \\ 5_000), do: call({:await, task, timeout})
 
   defp log(type, msg) do
-    Bus.broadcast!(:logger, {type, msg})
-    Bus.broadcast!({:logger, type}, msg)
+    name = call(:name)
+    Bus.broadcast!({:logger, name, type}, msg)
   end
 
   defp call(args), do: apply(Process.get(:__app__), [args])

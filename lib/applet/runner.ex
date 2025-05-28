@@ -17,6 +17,9 @@ defmodule Applet.Runner do
 
     app =
       fn
+        :name ->
+          name
+
         {:await, task, timeout} ->
           Task.await(task, timeout)
 
