@@ -25,6 +25,7 @@ defmodule Applet.Api do
 
   defp log(type, msg) do
     name = call(:name)
+    Bus.broadcast!(:logger, {name, type, msg})
     Bus.broadcast!({:logger, name, type}, msg)
   end
 
