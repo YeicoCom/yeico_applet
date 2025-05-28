@@ -8,11 +8,11 @@ defmodule Applet.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Task.Supervisor, name: Applet.Tasks},
       Applet.Multiple,
       Applet.Dynamic,
       Applet.Unique,
       Applet.Store,
+      Applet.Tasks,
       Applet.Api.Bus,
       Applet.Api.Ddb,
       Applet.Api.Adb,

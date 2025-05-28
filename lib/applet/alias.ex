@@ -1,7 +1,6 @@
 defmodule Applet.Alias do
   defmacro __using__(_) do
     quote do
-      alias Task.Supervisor, as: SuperTasks
       alias Applet.Multiple
       alias Applet.Dynamic
       alias Applet.Runner

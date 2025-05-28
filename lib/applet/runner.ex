@@ -8,7 +8,7 @@ defmodule Applet.Runner do
   end
 
   defp init(%{name: name, code: code}) do
-    Applet.stop!(name)
+    :ok = Applet.stop!(name)
     Unique.register!({:applet, name}, nil)
     Multiple.register!(:applet, name)
     start = {Task.Supervisor, :start_link, []}

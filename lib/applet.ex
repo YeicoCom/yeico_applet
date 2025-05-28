@@ -29,8 +29,8 @@ defmodule Applet do
   def stop!(name, to \\ 5_000) when to > 0 do
     :ok = Utils.kill_unique({:applet, name})
     :ok = Utils.kill_multiple({:applet, name})
-    Utils.wait_success(1, to, fn -> [] = Unique.lookup({{:applet, name}}) end)
-    Utils.wait_success(1, to, fn -> [] = Multiple.lookup({{:applet, name}}) end)
+    Utils.wait_success(1, to, fn -> [] = Unique.lookup({:applet, name}) end)
+    Utils.wait_success(1, to, fn -> [] = Multiple.lookup({:applet, name}) end)
   end
 
   def list() do
