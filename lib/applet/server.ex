@@ -38,8 +38,7 @@ defmodule Applet.Server do
     case Tcp.read(client) do
       {:ok, "save " <> path} ->
         path = String.trim(path)
-        name = Path.basename(path)
-        data = File.read!(path)
+        {name, data} = Applet.load!(path)
         :ok = Store.upsert(name, data)
 
       {:ok, "delete " <> name} ->

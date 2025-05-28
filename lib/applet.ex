@@ -9,6 +9,12 @@ defmodule Applet do
     :ok = Store.delete(name)
   end
 
+  def load!(path) do
+    name = Path.basename(path, ".exs")
+    data = File.read!(path)
+    {name, data}
+  end
+
   # functions only to avoid poluting module space
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
