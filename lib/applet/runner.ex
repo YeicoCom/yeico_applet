@@ -29,7 +29,18 @@ defmodule Applet.Runner do
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, name}, :async)
             Process.put(:__app__, app)
-            fun.()
+            Utils.run_safe(fun)
+          end)
+
+        {:async, fun1, fun2} ->
+          app = Process.get(:__app__)
+
+          Task.Supervisor.async(tasks, fn ->
+            Multiple.register!({:applet, name}, :async)
+            Process.put(:__app__, app)
+            res1 = Utils.run_safe(fun1)
+            res2 = Utils.run_safe(fun2)
+            {res1, res2}
           end)
       end
 

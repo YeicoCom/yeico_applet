@@ -30,7 +30,7 @@ defmodule AppletAsyncBusTest do
     eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
 
     eventually(20, 20, fn ->
-      assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
+      assert [{^pid, {:ok, {{:ok, :ok}, %{}}}}] = Unique.lookup({:applet, name})
     end)
 
     :ok = Applet.stop!(name)
