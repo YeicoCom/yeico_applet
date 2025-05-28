@@ -2,8 +2,10 @@ defmodule Applet.Api.Ddb do
   use Applet.Dets, table: "db_applet_api.dets"
   use GenServer
 
-  def start_link(opts),
-    do: GenServer.start_link(__MODULE__, :args, Keyword.merge(opts, name: __MODULE__))
+  def start_link(opts) do
+    opts = Keyword.merge(opts, name: __MODULE__)
+    GenServer.start_link(__MODULE__, :args, opts)
+  end
 
   def list(), do: GenServer.call(__MODULE__, :list)
   def upsert(key, data), do: GenServer.call(__MODULE__, {:upsert, key, data})

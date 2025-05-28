@@ -8,6 +8,7 @@ defmodule Applet.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      {Task.Supervisor, name: Applet.Tasks},
       Applet.Multiple,
       Applet.Dynamic,
       Applet.Unique,
@@ -16,7 +17,8 @@ defmodule Applet.Application do
       Applet.Api.Ddb,
       Applet.Api.Adb,
       Applet.Api.Mdb,
-      Applet.Api.Udb
+      Applet.Api.Udb,
+      Applet.Server
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

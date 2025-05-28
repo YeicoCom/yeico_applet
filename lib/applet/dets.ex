@@ -5,6 +5,7 @@ defmodule Applet.Dets do
   def lookup(table, key), do: exec(table, fn -> :dets.lookup(table, key) end)
   def delete(table, key), do: exec(table, fn -> :dets.delete(table, key) end, true)
   def upsert(table, key, data), do: exec(table, fn -> :dets.insert(table, {key, data}) end, true)
+  def delete_all(table), do: exec(table, fn -> :dets.delete_all_objects(table) end, true)
 
   def list(table) do
     capture = fn x -> {:continue, x} end
@@ -27,6 +28,7 @@ defmodule Applet.Dets do
       defp db_lookup(key), do: Dets.lookup(@table_name, key)
       defp db_delete(key), do: Dets.delete(@table_name, key)
       defp db_upsert(key, data), do: Dets.upsert(@table_name, key, data)
+      defp db_delete_all(), do: Dets.delete_all(@table_name)
       defp db_list(), do: Dets.list(@table_name)
     end
   end
