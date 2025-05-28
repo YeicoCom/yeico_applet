@@ -56,8 +56,8 @@ defmodule Applet.Server do
         :ok = Applet.stop!(name)
 
       {:ok, "list saved\n"} ->
-        Store.list()
-        |> Enum.each(fn {n, _} -> :ok = Tcp.write(client, ">#{n}\n") end)
+        Store.keys()
+        |> Enum.each(fn n -> :ok = Tcp.write(client, ">#{n}\n") end)
 
       {:ok, "list started\n"} ->
         Multiple.lookup(:applet)

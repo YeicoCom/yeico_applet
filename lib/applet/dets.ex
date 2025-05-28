@@ -7,6 +7,9 @@ defmodule Applet.Dets do
   def upsert(table, key, data), do: exec(table, fn -> :dets.insert(table, {key, data}) end, true)
   def delete_all(table), do: exec(table, fn -> :dets.delete_all_objects(table) end, true)
 
+  def keys(table),
+    do: exec(table, fn -> :dets.foldl(fn {n, _}, acc -> [n | acc] end, [], table) end)
+
   def list(table) do
     capture = fn x -> {:continue, x} end
     exec(table, fn -> :dets.traverse(table, capture) end)
@@ -30,6 +33,7 @@ defmodule Applet.Dets do
       defp db_upsert(key, data), do: Dets.upsert(@table_name, key, data)
       defp db_delete_all(), do: Dets.delete_all(@table_name)
       defp db_list(), do: Dets.list(@table_name)
+      defp db_keys(), do: Dets.keys(@table_name)
     end
   end
 end

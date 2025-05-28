@@ -6,6 +6,7 @@ defmodule Applet.Store do
     do: GenServer.start_link(__MODULE__, :args, Keyword.merge(opts, name: __MODULE__))
 
   def list(), do: GenServer.call(__MODULE__, :list)
+  def keys(), do: GenServer.call(__MODULE__, :keys)
   def delete_all(), do: GenServer.call(__MODULE__, :delete_all)
   def upsert(key, data), do: GenServer.call(__MODULE__, {:upsert, key, data})
   def delete(key), do: GenServer.call(__MODULE__, {:delete, key})
@@ -17,6 +18,10 @@ defmodule Applet.Store do
 
   def handle_call(:list, _from, state) do
     {:reply, db_list(), state}
+  end
+
+  def handle_call(:keys, _from, state) do
+    {:reply, db_keys(), state}
   end
 
   def handle_call(:delete_all, _from, state) do
