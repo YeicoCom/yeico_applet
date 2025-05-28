@@ -13,6 +13,7 @@ defmodule Applet.Api do
   end
 
   alias Applet.Api.Bus
+  def name(), do: call(:name)
   def info(msg), do: log(:info, msg)
   def debug(msg), do: log(:debug, msg)
   def warn(msg), do: log(:warn, msg)
