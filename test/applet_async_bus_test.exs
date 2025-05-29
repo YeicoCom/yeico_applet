@@ -1,10 +1,9 @@
 defmodule AppletAsyncBusTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  import Eventually
 
   setup do
-    eventually(20, 20, fn -> assert [] = Multiple.list() end)
+    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
   end
 
   test "async/bus applet" do
@@ -27,9 +26,9 @@ defmodule AppletAsyncBusTest do
 
     {:ok, pid} = Applet.start!(name, code)
 
-    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
 
-    eventually(20, 20, fn ->
+    Utils.wait_success(20, 20, fn ->
       assert [{^pid, {:ok, {{:ok, :ok}, %{}}}}] = Unique.lookup({:applet, name})
     end)
 

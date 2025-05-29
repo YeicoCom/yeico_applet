@@ -2,7 +2,6 @@ defmodule AppletServerTest do
   use ExUnit.Case, async: false
   use Applet.Alias
   use Applet.Api
-  import Eventually
 
   setup do
     Store.delete_all()
@@ -10,7 +9,7 @@ defmodule AppletServerTest do
     Multiple.lookup(:applet)
     |> Enum.each(fn {_, n} -> :ok = Applet.stop!(n) end)
 
-    eventually(20, 20, fn -> assert [] = Multiple.list() end)
+    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
   end
 
   test "applet server" do
@@ -31,7 +30,7 @@ defmodule AppletServerTest do
     :ok = Tcp.write(client, "start yeico_applet_server_test\n")
     assert {:ok, "ok\n"} = Tcp.read(client)
 
-    eventually(20, 20, fn ->
+    Utils.wait_success(20, 20, fn ->
       assert [{_, "yeico_applet_server_test"}] = Multiple.lookup(:applet)
     end)
 

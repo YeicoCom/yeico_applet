@@ -1,10 +1,9 @@
 defmodule AppletModbusTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  import Eventually
 
   setup do
-    eventually(20, 20, fn -> assert [] = Multiple.list() end)
+    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
   end
 
   test "modbus applet" do
@@ -56,9 +55,9 @@ defmodule AppletModbusTest do
 
     {:ok, pid} = Applet.start!(name, code)
 
-    eventually(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
 
-    eventually(20, 20, fn ->
+    Utils.wait_success(20, 20, fn ->
       assert [{^pid, {:ok, {:ok, %{slave: _, port: _, model: _, master: _}}}}] =
                Unique.lookup({:applet, name})
     end)
