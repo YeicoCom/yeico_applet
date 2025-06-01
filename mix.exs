@@ -22,8 +22,7 @@ defmodule Applet.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:modbus, github: "samuelventura/modbus", only: :test},
-      {:timex, "~> 3.7"}
+      {:modbus, github: "samuelventura/modbus", only: :test}
     ]
   end
 end

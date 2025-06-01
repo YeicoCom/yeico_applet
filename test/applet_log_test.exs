@@ -28,7 +28,8 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "timezone America/Mexico_City\n")
+    {localtime, 0} = System.cmd("date", ["+%F %H:%M:%S"])
+    :ok = Tcp.write(client, "localtime #{localtime}")
     assert {:ok, "ok\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "trace trace\n")
     {:ok, _pid} = Applet.start!(name, code)
@@ -80,7 +81,8 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "timezone America/Mexico_City\n")
+    {localtime, 0} = System.cmd("date", ["+%F %H:%M:%S"])
+    :ok = Tcp.write(client, "localtime #{localtime}")
     assert {:ok, "ok\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "debug debug\n")
     {:ok, _pid} = Applet.start!(name, code)
@@ -128,7 +130,8 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "timezone America/Mexico_City\n")
+    {localtime, 0} = System.cmd("date", ["+%F %H:%M:%S"])
+    :ok = Tcp.write(client, "localtime #{localtime}")
     assert {:ok, "ok\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "info info\n")
     {:ok, _pid} = Applet.start!(name, code)

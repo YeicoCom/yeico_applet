@@ -77,10 +77,14 @@ defmodule Applet.Server do
           Multiple.lookup(:applet) |> Enum.each(fun)
           state
 
-        {:ok, "timezone " <> name} ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} timezone #{name}")
-          state |> Map.put(:timezone, name)
+        {:ok, "localtime " <> localtime} ->
+          localtime = String.trim(localtime)
+          Logger.notice("Applet client #{client.port} localtime #{localtime}")
+          local = NaiveDateTime.from_iso8601!(localtime)
+          utc = NaiveDateTime.utc_now()
+          diff = NaiveDateTime.diff(utc, local)
+          state = state |> Map.put(:localtime, localtime)
+          state |> Map.put(:diffsec, diff)
 
         {:ok, "trace " <> name} ->
           name = String.trim(name)
@@ -122,9 +126,9 @@ defmodule Applet.Server do
       {{:logger, ^name, type}, ^client, msg} ->
         type = type |> Atom.to_string() |> String.upcase()
         # America/Mexico_City
-        getter = fn -> Timex.Timezone.local() end
-        tz = Map.get_lazy(state, :timezone, getter)
-        now = Timex.now(tz)
+        diffsec = Map.get(state, :diffsec, 0)
+        utc = NaiveDateTime.utc_now()
+        now = NaiveDateTime.shift(utc, second: diffsec)
         :ok = Tcp.write(client, log_io(now, name, type, msg))
     end
 
@@ -133,7 +137,7 @@ defmodule Applet.Server do
 
   defp log_io(now, _name, type, msg) when is_binary(msg) do
     [
-      Timex.format!(now, "{h24}{m}{s}{ss}"),
+      NaiveDateTime.to_iso8601(now),
       " ",
       type,
       " ",
