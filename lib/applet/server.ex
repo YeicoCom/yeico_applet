@@ -128,7 +128,7 @@ defmodule Applet.Server do
         # America/Mexico_City
         diffsec = Map.get(state, :diffsec, 0)
         utc = NaiveDateTime.utc_now()
-        now = NaiveDateTime.shift(utc, second: diffsec)
+        now = NaiveDateTime.add(utc, diffsec, :second)
         :ok = Tcp.write(client, log_io(now, name, type, msg))
     end
 
