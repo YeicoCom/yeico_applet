@@ -32,46 +32,113 @@ defmodule Applet.Server do
 
   defp accept(server) do
     {:ok, client} = Tcp.accept(server)
-    run = fn -> serve(client) end
+    run = fn -> serve(client, %{}) end
     clean = fn -> :ok = Tcp.close(client) end
     %Task{} = Tasks.async(run, clean)
     accept(server)
   end
 
-  defp serve(client) do
-    case Tcp.read(client) do
-      {:ok, "save " <> path} ->
-        path = String.trim(path)
-        Logger.notice("Applet client #{client.port} save #{path}")
-        {name, data} = Applet.load!(path)
-        :ok = Store.upsert(name, data)
+  defp serve(client, state) do
+    state =
+      case Tcp.read(client) do
+        {:ok, "save " <> path} ->
+          path = String.trim(path)
+          Logger.notice("Applet client #{client.port} save #{path}")
+          {name, data} = Applet.load!(path)
+          :ok = Store.upsert(name, data)
+          state
 
-      {:ok, "delete " <> name} ->
-        name = String.trim(name)
-        Logger.notice("Applet client #{client.port} delete #{name}")
-        :ok = Store.delete(name)
+        {:ok, "delete " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} delete #{name}")
+          :ok = Store.delete(name)
+          state
 
-      {:ok, "start " <> name} ->
-        name = String.trim(name)
-        Logger.notice("Applet client #{client.port} start #{name}")
-        [{^name, data}] = Store.lookup(name)
-        {:ok, _pid} = Applet.start!(name, data)
+        {:ok, "start " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} start #{name}")
+          [{^name, data}] = Store.lookup(name)
+          {:ok, _pid} = Applet.start!(name, data)
+          state
 
-      {:ok, "stop " <> name} ->
-        name = String.trim(name)
-        Logger.notice("Applet client #{client.port} stop #{name}")
-        :ok = Applet.stop!(name)
+        {:ok, "stop " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} stop #{name}")
+          :ok = Applet.stop!(name)
+          state
 
-      {:ok, "list saved\n"} ->
-        Store.keys()
-        |> Enum.each(fn n -> :ok = Tcp.write(client, ">#{n}\n") end)
+        {:ok, "list saved\n"} ->
+          fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
+          Store.keys() |> Enum.each(fun)
+          state
 
-      {:ok, "list started\n"} ->
-        Multiple.lookup(:applet)
-        |> Enum.each(fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end)
-    end
+        {:ok, "list started\n"} ->
+          fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
+          Multiple.lookup(:applet) |> Enum.each(fun)
+          state
+
+        {:ok, "timezone " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} timezone #{name}")
+          state |> Map.put(:timezone, name)
+
+        {:ok, "trace " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} trace #{name}")
+          Api.Bus.subscribe!({:logger, name, :trace}, client)
+          Api.Bus.subscribe!({:logger, name, :debug}, client)
+          Api.Bus.subscribe!({:logger, name, :info}, client)
+          Api.Bus.subscribe!({:logger, name, :warn}, client)
+          Api.Bus.subscribe!({:logger, name, :error}, client)
+          log_loop(client, name, state)
+          state
+
+        {:ok, "debug " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} debug #{name}")
+          Api.Bus.subscribe!({:logger, name, :debug}, client)
+          Api.Bus.subscribe!({:logger, name, :info}, client)
+          Api.Bus.subscribe!({:logger, name, :warn}, client)
+          Api.Bus.subscribe!({:logger, name, :error}, client)
+          log_loop(client, name, state)
+          state
+
+        {:ok, "info " <> name} ->
+          name = String.trim(name)
+          Logger.notice("Applet client #{client.port} info #{name}")
+          Api.Bus.subscribe!({:logger, name, :info}, client)
+          Api.Bus.subscribe!({:logger, name, :warn}, client)
+          Api.Bus.subscribe!({:logger, name, :error}, client)
+          log_loop(client, name, state)
+          state
+      end
 
     :ok = Tcp.write(client, "ok\n")
-    serve(client)
+    serve(client, state)
+  end
+
+  defp log_loop(client, name, state) do
+    receive do
+      {{:logger, ^name, type}, ^client, msg} ->
+        type = type |> Atom.to_string() |> String.upcase()
+        # America/Mexico_City
+        getter = fn -> Timex.Timezone.local() end
+        tz = Map.get_lazy(state, :timezone, getter)
+        now = Timex.now(tz)
+        :ok = Tcp.write(client, log_io(now, name, type, msg))
+    end
+
+    log_loop(client, name, state)
+  end
+
+  defp log_io(now, _name, type, msg) when is_binary(msg) do
+    [
+      Timex.format!(now, "{h24}{m}{s}{ss}"),
+      " ",
+      type,
+      " ",
+      msg,
+      "\n"
+    ]
   end
 end
