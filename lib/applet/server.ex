@@ -40,51 +40,53 @@ defmodule Applet.Server do
   end
 
   defp serve(client, state) do
+    {:ok, cmd} = Tcp.read(client)
+
     state =
-      case Tcp.read(client) do
-        {:ok, "save " <> path} ->
+      case cmd do
+        "save " <> path ->
           path = String.trim(path)
           Logger.notice("Applet client #{client.port} save #{path}")
           {name, data} = Applet.load!(path)
           :ok = Store.upsert(name, data)
           state
 
-        {:ok, "delete " <> name} ->
+        "delete " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} delete #{name}")
           :ok = Store.delete(name)
           state
 
-        {:ok, "start " <> name} ->
+        "start " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} start #{name}")
           [{^name, data}] = Store.lookup(name)
           {:ok, _pid} = Applet.start!(name, data)
           state
 
-        {:ok, "stop " <> name} ->
+        "stop " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} stop #{name}")
           :ok = Applet.stop!(name)
           state
 
-        {:ok, "list saved\n"} ->
+        "list saved\n" ->
           fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
           Store.keys() |> Enum.each(fun)
           state
 
-        {:ok, "list started\n"} ->
+        "list started\n" ->
           fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
           Multiple.lookup(:applet) |> Enum.each(fun)
           state
 
-        {:ok, "ansicolor " <> ansicolor} ->
+        "ansicolor " <> ansicolor ->
           ansicolor = String.trim(ansicolor)
           Logger.notice("Applet client #{client.port} ansicolor #{ansicolor}")
           ansicolor = String.to_existing_atom(ansicolor)
           Map.put(state, :ansicolor, ansicolor)
 
-        {:ok, "localtime " <> localtime} ->
+        "localtime " <> localtime ->
           localtime = String.trim(localtime)
           Logger.notice("Applet client #{client.port} localtime #{localtime}")
           local = NaiveDateTime.from_iso8601!(localtime)
@@ -92,7 +94,7 @@ defmodule Applet.Server do
           diff = NaiveDateTime.diff(local, utc)
           Map.put(state, :localdiff, diff)
 
-        {:ok, "trace " <> name} ->
+        "trace " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} trace #{name}")
           Api.Bus.subscribe!({:logger, name, :trace}, client)
@@ -103,7 +105,7 @@ defmodule Applet.Server do
           log_loop(client, name, state)
           state
 
-        {:ok, "debug " <> name} ->
+        "debug " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} debug #{name}")
           Api.Bus.subscribe!({:logger, name, :debug}, client)
@@ -113,7 +115,7 @@ defmodule Applet.Server do
           log_loop(client, name, state)
           state
 
-        {:ok, "info " <> name} ->
+        "info " <> name ->
           name = String.trim(name)
           Logger.notice("Applet client #{client.port} info #{name}")
           Api.Bus.subscribe!({:logger, name, :info}, client)
@@ -123,7 +125,7 @@ defmodule Applet.Server do
           state
       end
 
-    :ok = Tcp.write(client, "ok\n")
+    :ok = Tcp.write(client, ["ok ", cmd])
     serve(client, state)
   end
 

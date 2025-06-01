@@ -117,8 +117,11 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
+    # check both work, with space and with T
     :ok = Tcp.write(client, "localtime 2000-01-01 00:00:00\n")
-    assert {:ok, "ok\n"} = Tcp.read(client)
+    assert {:ok, "ok localtime 2000-01-01 00:00:00\n"} = Tcp.read(client)
+    :ok = Tcp.write(client, "localtime 2000-01-01T00:00:00\n")
+    assert {:ok, "ok localtime 2000-01-01T00:00:00\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "info localtime\n")
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -148,7 +151,7 @@ defmodule AppletLogTest do
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "ansicolor true\n")
-    assert {:ok, "ok\n"} = Tcp.read(client)
+    assert {:ok, "ok ansicolor true\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "trace ansicolor\n")
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
