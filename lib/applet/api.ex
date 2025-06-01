@@ -22,7 +22,7 @@ defmodule Applet.Api do
   def sleep(), do: :timer.sleep(:infinity)
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
-  def await(task, timeout \\ 5_000), do: call({:await, task, timeout})
+  def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
 
   def async(fun) when is_function(fun, 0), do: call({:async, fun})
 
