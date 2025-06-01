@@ -45,6 +45,7 @@ defmodule Applet.Runner do
       end
 
     Process.put(:__app__, app)
+    Api.info("APPLET STARTING #{name}")
 
     eval = fn ->
       {result, bindings} = Code.eval_string(code, [], file: "APPLET:#{name}")
@@ -53,6 +54,12 @@ defmodule Applet.Runner do
 
     result = Utils.run_safe(eval)
     Unique.update!({:applet, name}, result)
+
+    case result do
+      {:ok, res} -> Api.info("APPLET EVAL RESULT #{inspect(res)}")
+      {:error, res} -> Api.error("APPLET EVAL RESULT #{inspect(res)}")
+    end
+
     :timer.sleep(:infinity)
   end
 end
