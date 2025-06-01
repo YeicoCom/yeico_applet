@@ -29,6 +29,7 @@ defmodule AppletLogTest do
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "trace trace\n")
+    assert {:ok, "ok trace trace\n"} = Tcp.read(client)
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "INFO", "APPLET STARTING trace"] = String.split(line, " ", parts: 3, trim: true)
@@ -62,6 +63,7 @@ defmodule AppletLogTest do
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "debug debug\n")
+    assert {:ok, "ok debug debug\n"} = Tcp.read(client)
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "INFO", "APPLET STARTING debug"] = String.split(line, " ", parts: 3, trim: true)
@@ -93,6 +95,7 @@ defmodule AppletLogTest do
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "info info\n")
+    assert {:ok, "ok info info\n"} = Tcp.read(client)
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "INFO", "APPLET STARTING info"] = String.split(line, " ", parts: 3, trim: true)
@@ -123,6 +126,7 @@ defmodule AppletLogTest do
     :ok = Tcp.write(client, "localtime 2000-01-01T00:00:00\n")
     assert {:ok, "ok localtime 2000-01-01T00:00:00\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "info localtime\n")
+    assert {:ok, "ok info localtime\n"} = Tcp.read(client)
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
@@ -153,6 +157,7 @@ defmodule AppletLogTest do
     :ok = Tcp.write(client, "ansicolor true\n")
     assert {:ok, "ok ansicolor true\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "trace ansicolor\n")
+    assert {:ok, "ok trace ansicolor\n"} = Tcp.read(client)
     {:ok, _pid} = Applet.start!(name, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 

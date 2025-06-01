@@ -102,6 +102,7 @@ defmodule Applet.Server do
           Api.Bus.subscribe!({:logger, name, :info}, client)
           Api.Bus.subscribe!({:logger, name, :warn}, client)
           Api.Bus.subscribe!({:logger, name, :error}, client)
+          :ok = Tcp.write(client, ["ok ", cmd])
           log_loop(client, name, state)
           state
 
@@ -112,6 +113,7 @@ defmodule Applet.Server do
           Api.Bus.subscribe!({:logger, name, :info}, client)
           Api.Bus.subscribe!({:logger, name, :warn}, client)
           Api.Bus.subscribe!({:logger, name, :error}, client)
+          :ok = Tcp.write(client, ["ok ", cmd])
           log_loop(client, name, state)
           state
 
@@ -121,6 +123,7 @@ defmodule Applet.Server do
           Api.Bus.subscribe!({:logger, name, :info}, client)
           Api.Bus.subscribe!({:logger, name, :warn}, client)
           Api.Bus.subscribe!({:logger, name, :error}, client)
+          :ok = Tcp.write(client, ["ok ", cmd])
           log_loop(client, name, state)
           state
       end
