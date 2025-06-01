@@ -9,4 +9,6 @@
 mkdir yeico_applet && cd yeico_applet
 mix new --app applet --sup .
 iex --sname applet@localhost --cookie cookie -S mix app.start
+#check colors
+mix run exs/colors.exs
 ```

@@ -12,11 +12,12 @@ defmodule Applet.Server do
   def start_link() do
     config = Application.get_env(:applet, __MODULE__)
     port = config[:port]
-    task = Tasks.async(fn -> init(port) end)
+    colors = config[:colors] |> Enum.into(%{})
+    task = Tasks.async(fn -> init(port, colors) end)
     {:ok, Api.pid(task)}
   end
 
-  defp init(port) do
+  defp init(port, colors) do
     true = Process.register(self(), __MODULE__)
 
     Store.list()
@@ -27,15 +28,15 @@ defmodule Applet.Server do
 
     {:ok, server} = Tcp.listen("127.0.0.1", port, line: true)
     Logger.notice("Applet Server port #{server.port}")
-    accept(server)
+    accept(server, colors)
   end
 
-  defp accept(server) do
+  defp accept(server, colors) do
     {:ok, client} = Tcp.accept(server)
-    run = fn -> serve(client, %{}) end
+    run = fn -> serve(client, %{colors: colors}) end
     clean = fn -> :ok = Tcp.close(client) end
     %Task{} = Tasks.async(run, clean)
-    accept(server)
+    accept(server, colors)
   end
 
   defp serve(client, state) do
@@ -77,14 +78,19 @@ defmodule Applet.Server do
           Multiple.lookup(:applet) |> Enum.each(fun)
           state
 
+        {:ok, "ansicolor " <> ansicolor} ->
+          ansicolor = String.trim(ansicolor)
+          Logger.notice("Applet client #{client.port} ansicolor #{ansicolor}")
+          ansicolor = String.to_existing_atom(ansicolor)
+          Map.put(state, :ansicolor, ansicolor)
+
         {:ok, "localtime " <> localtime} ->
           localtime = String.trim(localtime)
           Logger.notice("Applet client #{client.port} localtime #{localtime}")
           local = NaiveDateTime.from_iso8601!(localtime)
           utc = NaiveDateTime.utc_now()
-          diff = NaiveDateTime.diff(utc, local)
-          state = state |> Map.put(:localtime, localtime)
-          state |> Map.put(:diffsec, diff)
+          diff = NaiveDateTime.diff(local, utc)
+          Map.put(state, :localdiff, diff)
 
         {:ok, "trace " <> name} ->
           name = String.trim(name)
@@ -121,27 +127,30 @@ defmodule Applet.Server do
     serve(client, state)
   end
 
-  defp log_loop(client, name, state) do
+  defp log_loop(client, name, state = %{colors: colors}) do
     receive do
       {{:logger, ^name, type}, ^client, msg} ->
+        ansicolor = Map.get(state, :ansicolor, false)
+        color = if ansicolor, do: colors[type]
         type = type |> Atom.to_string() |> String.upcase()
-        # America/Mexico_City
-        diffsec = Map.get(state, :diffsec, 0)
+        localdiff = Map.get(state, :localdiff, 0)
         utc = NaiveDateTime.utc_now()
-        now = NaiveDateTime.add(utc, diffsec, :second)
-        :ok = Tcp.write(client, log_io(now, name, type, msg))
+        now = NaiveDateTime.add(utc, localdiff, :second)
+        :ok = Tcp.write(client, log_io(color, now, type, msg))
     end
 
     log_loop(client, name, state)
   end
 
-  defp log_io(now, _name, type, msg) when is_binary(msg) do
+  defp log_io(color, now, type, msg) when is_binary(msg) do
     [
+      if(color, do: color, else: ""),
       NaiveDateTime.to_iso8601(now),
       " ",
       type,
       " ",
       msg,
+      if(color, do: IO.ANSI.reset(), else: ""),
       "\n"
     ]
   end
