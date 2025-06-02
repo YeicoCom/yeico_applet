@@ -22,6 +22,7 @@ defmodule Applet.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:phoenix_live_view, "~> 1.0"},
       {:modbus, github: "samuelventura/modbus", only: :test}
     ]
   end
