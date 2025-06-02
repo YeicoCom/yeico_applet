@@ -13,6 +13,7 @@ defmodule Applet.Start do
   end
 
   defp init() do
+    true = Process.register(self(), __MODULE__)
     Unique.register!(:started, nil)
     :timer.sleep(:infinity)
   end
