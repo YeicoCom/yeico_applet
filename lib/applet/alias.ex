@@ -10,6 +10,7 @@ defmodule Applet.Alias do
       alias Applet.Utils
       alias Applet.Dets
       alias Applet.Tasks
+      alias Applet.Start
       alias Applet.Alias
 
       require Logger

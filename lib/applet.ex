@@ -1,6 +1,19 @@
 defmodule Applet do
   use Applet.Alias
 
+  def wait(poll \\ 100) do
+    Stream.interval(poll)
+    |> Stream.take_while(fn _ ->
+      case Unique.lookup(:started) do
+        [] -> true
+        _ -> false
+      end
+    end)
+    |> Stream.take(-1)
+    |> Enum.to_list()
+    |> is_list()
+  end
+
   def save!(name, code) do
     :ok = Store.upsert(name, code)
   end

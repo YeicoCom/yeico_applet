@@ -14,6 +14,7 @@ defmodule Applet.Api do
 
   alias Applet.Api.Bus
   def name(), do: call(:name)
+  def wait(), do: Applet.wait()
   def trace(msg), do: log(:trace, msg)
   def debug(msg), do: log(:debug, msg)
   def info(msg), do: log(:info, msg)
