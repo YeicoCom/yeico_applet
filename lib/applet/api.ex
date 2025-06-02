@@ -62,11 +62,20 @@ defmodule Applet.Api do
   def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0),
     do: call({:async, fun1, fun2})
 
+  def wrap(fun) when is_function(fun, 1) do
+    api = Process.get(:__api__)
+
+    fn arg ->
+      Process.put(:__api__, api)
+      fun.(arg)
+    end
+  end
+
   defp log(type, msg) do
     name = call(:name)
     Bus.broadcast!(:logger, {name, type, msg})
     Bus.broadcast!({:logger, name, type}, msg)
   end
 
-  defp call(args), do: apply(Process.get(:__app__), [args])
+  defp call(args), do: apply(Process.get(:__api__), [args])
 end

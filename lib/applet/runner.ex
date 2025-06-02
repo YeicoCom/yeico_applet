@@ -15,7 +15,7 @@ defmodule Applet.Runner do
     spec = %{id: {name, :tasks}, start: start, restart: :temporary}
     {:ok, tasks} = Dynamic.start_child(spec)
 
-    app =
+    api =
       fn
         :name ->
           name
@@ -24,27 +24,27 @@ defmodule Applet.Runner do
           Task.await(task, timeout)
 
         {:async, fun} ->
-          app = Process.get(:__app__)
+          api = Process.get(:__api__)
 
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, name}, :async)
-            Process.put(:__app__, app)
+            Process.put(:__api__, api)
             Utils.run_safe(fun)
           end)
 
         {:async, fun1, fun2} ->
-          app = Process.get(:__app__)
+          api = Process.get(:__api__)
 
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, name}, :async)
-            Process.put(:__app__, app)
+            Process.put(:__api__, api)
             res1 = Utils.run_safe(fun1)
             res2 = Utils.run_safe(fun2)
             {res1, res2}
           end)
       end
 
-    Process.put(:__app__, app)
+    Process.put(:__api__, api)
     Api.info("APPLET STARTING #{name}")
 
     eval = fn ->
