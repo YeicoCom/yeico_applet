@@ -1,11 +1,12 @@
 defmodule Applet.Api.Tcp do
   def connect(ip, port, opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, :infinity)
     line = Keyword.get(opts, :line, false)
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
     opts = [:binary, packet: packet, active: active]
     ip = if is_binary(ip), do: parse(ip), else: ip
-    {:ok, socket} = :gen_tcp.connect(ip, port, opts)
+    {:ok, socket} = :gen_tcp.connect(ip, port, opts, timeout)
     {:ok, {ip, port}} = :inet.sockname(socket)
     {:ok, peer} = :inet.peername(socket)
     {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
@@ -28,8 +29,8 @@ defmodule Applet.Api.Tcp do
     {:ok, %{ip: ip, port: port, socket: client}}
   end
 
-  def read(%{socket: socket}) do
-    case :gen_tcp.recv(socket, 0) do
+  def read(%{socket: socket}, timeout \\ :infinity) do
+    case :gen_tcp.recv(socket, 0, timeout) do
       {:ok, data} -> {:ok, data}
       {:error, reason} -> {:error, reason}
     end
