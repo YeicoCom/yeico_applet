@@ -14,9 +14,13 @@ defmodule Applet do
     Shared.put("applets:path", value)
   end
 
+  def started?() do
+    Shared.get("applets:started", false)
+  end
+
   def await(poll \\ 100) do
     Stream.interval(poll)
-    |> Stream.take_while(fn _ -> not Shared.get("applets:started", false) end)
+    |> Stream.take_while(fn _ -> not started?() end)
     |> Stream.take(-1)
     |> Enum.to_list()
     |> is_list()
