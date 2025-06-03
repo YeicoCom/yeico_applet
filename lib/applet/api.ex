@@ -58,7 +58,7 @@ defmodule Applet.Api do
   alias Applet.Api.Bus
 
   def name(), do: call(:name)
-  def wait(), do: Applet.wait()
+  def path(), do: Applet.path()
   def trace(msg), do: log(:trace, msg)
   def debug(msg), do: log(:debug, msg)
   def info(msg), do: log(:info, msg)
@@ -67,6 +67,7 @@ defmodule Applet.Api do
   def sleep(), do: :timer.sleep(:infinity)
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
+  def await(), do: Applet.await()
   def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
 
   def async(fun) when is_function(fun, 0), do: call({:async, fun})

@@ -1,14 +1,17 @@
 defmodule Applet do
   use Applet.Alias
 
-  def wait(poll \\ 100) do
+  def path() do
+    Shared.get("applets:path", "#{File.cwd!()}/applets")
+  end
+
+  def path(value) do
+    Shared.put("applets:path", value)
+  end
+
+  def await(poll \\ 100) do
     Stream.interval(poll)
-    |> Stream.take_while(fn _ ->
-      case Unique.lookup(:started) do
-        [] -> true
-        _ -> false
-      end
-    end)
+    |> Stream.take_while(fn _ -> not Shared.get("applets:started", false) end)
     |> Stream.take(-1)
     |> Enum.to_list()
     |> is_list()
