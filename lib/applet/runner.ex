@@ -44,8 +44,13 @@ defmodule Applet.Runner do
           end)
       end
 
-    Applet.await()
     Process.put(:__api__, api)
+
+    unless Applet.started?() do
+      Api.info("APPLET AWAITING #{name}")
+      Applet.await()
+    end
+
     Api.info("APPLET STARTING #{name}")
 
     eval = fn ->
