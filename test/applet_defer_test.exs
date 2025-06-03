@@ -8,7 +8,7 @@ defmodule AppletDeferTest do
   end
 
   test "defer applet" do
-    name = "defer"
+    route = "defer"
 
     code = """
     use Applet.Api
@@ -19,16 +19,8 @@ defmodule AppletDeferTest do
     :ok
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
-
-    Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
-    end)
-
+    Applet.start!(route, code)
     Utils.wait_success(20, 20, fn -> assert 1 = Adb.get(:defer) end)
-
-    :ok = Applet.stop!(name)
+    Applet.stop!(route)
   end
 end

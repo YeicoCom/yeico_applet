@@ -1,4 +1,4 @@
-defmodule AppletEmptyTest do
+defmodule AppletEvalTest do
   use ExUnit.Case, async: false
   use Applet.Alias
 
@@ -6,15 +6,20 @@ defmodule AppletEmptyTest do
     Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
   end
 
-  test "empty applet" do
-    route = "empty"
-    code = ""
+  test "eval applet" do
+    route = "test.exs"
+
+    code = """
+    use Applet.Api
+
+    Api.eval("\#{Api.name()}/\#{Api.file()}")
+    """
 
     {:ok, pid} = Applet.start!(route, code)
     Utils.wait_success(20, 20, fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
 
     Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {nil, %{}}}] = Unique.lookup({:applet, route})
+      assert [{^pid, {{:subscript, %{}}, %{}}}] = Unique.lookup({:applet, route})
     end)
 
     Applet.stop!(route)

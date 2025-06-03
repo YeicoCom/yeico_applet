@@ -13,7 +13,7 @@ defmodule AppletLogTest do
   end
 
   test "applet trace" do
-    name = "trace"
+    route = "trace"
 
     code = """
     use Applet.Api
@@ -30,9 +30,9 @@ defmodule AppletLogTest do
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "trace trace\n")
     assert {:ok, "ok trace trace\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(name, code)
+    {:ok, _pid} = Applet.start!(route, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "APPLET STARTING trace"] = String.split(line, " ", parts: 3, trim: true)
+    assert [_, "INFO", "Applet starting trace"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "TRACE", "msg"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -47,7 +47,7 @@ defmodule AppletLogTest do
   end
 
   test "applet debug" do
-    name = "debug"
+    route = "debug"
 
     code = """
     use Applet.Api
@@ -64,9 +64,9 @@ defmodule AppletLogTest do
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "debug debug\n")
     assert {:ok, "ok debug debug\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(name, code)
+    {:ok, _pid} = Applet.start!(route, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "APPLET STARTING debug"] = String.split(line, " ", parts: 3, trim: true)
+    assert [_, "INFO", "Applet starting debug"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -79,7 +79,7 @@ defmodule AppletLogTest do
   end
 
   test "applet info" do
-    name = "info"
+    route = "info"
 
     code = """
     use Applet.Api
@@ -96,9 +96,9 @@ defmodule AppletLogTest do
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "info info\n")
     assert {:ok, "ok info info\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(name, code)
+    {:ok, _pid} = Applet.start!(route, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "APPLET STARTING info"] = String.split(line, " ", parts: 3, trim: true)
+    assert [_, "INFO", "Applet starting info"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
     assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -109,7 +109,7 @@ defmodule AppletLogTest do
   end
 
   test "applet localtime" do
-    name = "localtime"
+    route = "localtime"
 
     code = """
     use Applet.Api
@@ -127,10 +127,10 @@ defmodule AppletLogTest do
     assert {:ok, "ok localtime 2000-01-01T00:00:00\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "info localtime\n")
     assert {:ok, "ok info localtime\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(name, code)
+    {:ok, _pid} = Applet.start!(route, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    assert ["2000" <> _, "INFO", "APPLET STARTING localtime"] =
+    assert ["2000" <> _, "INFO", "Applet starting localtime"] =
              String.split(line, " ", parts: 3, trim: true)
 
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -139,7 +139,7 @@ defmodule AppletLogTest do
   end
 
   test "applet ansicolor" do
-    name = "ansicolor"
+    route = "ansicolor"
 
     code = """
     use Applet.Api
@@ -158,7 +158,7 @@ defmodule AppletLogTest do
     assert {:ok, "ok ansicolor true\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "trace ansicolor\n")
     assert {:ok, "ok trace ansicolor\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(name, code)
+    {:ok, _pid} = Applet.start!(route, code)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
     trace = IO.ANSI.light_black()
@@ -168,7 +168,7 @@ defmodule AppletLogTest do
     error = IO.ANSI.light_red()
     reset = IO.ANSI.reset()
 
-    assert [^info <> _, "INFO", "APPLET STARTING ansicolor" <> ^reset] =
+    assert [^info <> _, "INFO", "Applet starting ansicolor" <> ^reset] =
              String.split(line, " ", parts: 3, trim: true)
 
     line = Tcp.read(client) |> elem(1) |> String.trim()

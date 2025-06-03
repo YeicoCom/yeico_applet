@@ -44,8 +44,8 @@ defmodule Applet.Dets do
         config = Application.get_env(:applet, __MODULE__)
         table = config[:table]
         table = Path.absname(table)
-        name = String.trim_leading("#{__MODULE__}", "Elixir.Applet.")
-        Logger.notice("Applet #{name} table #{table}")
+        module = String.trim_leading("#{__MODULE__}", "Elixir.Applet.")
+        Logger.notice("Applet dets module #{module} table #{table}")
         table = to_charlist(table)
         {:ok, table} = Dets.open(table)
       end

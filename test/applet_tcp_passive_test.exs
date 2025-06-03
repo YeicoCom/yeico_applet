@@ -7,7 +7,7 @@ defmodule AppletTcpPassiveTest do
   end
 
   test "tcp/passive applet" do
-    name = "tcp/passive"
+    route = "tcp/passive"
 
     code = """
     use Applet.Api
@@ -58,14 +58,12 @@ defmodule AppletTcpPassiveTest do
     end
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+    {:ok, pid} = Applet.start!(route, code)
 
     Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {:closed, %{}}}}] = Unique.lookup({:applet, name})
+      assert [{^pid, {:closed, %{}}}] = Unique.lookup({:applet, route})
     end)
 
-    :ok = Applet.stop!(name)
+    Applet.stop!(route)
   end
 end

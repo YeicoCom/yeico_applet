@@ -1,5 +1,6 @@
 # Yeico Applet
 
+- Yeico Terminal needs to run production ready RAD scripted apps.
 - Yeico Terminal needs to run scripts comming from Yeico Central over the link.
 - Yeico Central needs to run scripts pushed from the cli to customize terminal handling.
 
@@ -13,3 +14,16 @@ iex --sname remote@localhost --cookie cookie --remsh applet@localhost
 #check colors
 mix run exs/colors.exs
 ```
+
+```elixir
+# from iex
+# runs ${PWD}/applets/tryout.exs
+Applet.run!("tryout.exs")
+# runs ${PWD}/applets/tryout/tryout.exs
+Applet.run!("tryout/tryout.exs")
+#type INTRO to stop logging
+```
+
+## Fixme
+
+- [ ] app shutdowns from time to time on recompile from eix

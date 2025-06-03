@@ -57,7 +57,7 @@ defmodule Applet.Api do
   alias Applet.Utils
   alias Applet.Api.Bus
 
-  def name(), do: call(:name)
+  def route(), do: call(:route)
   def path(), do: Applet.path()
   def trace(msg), do: log(:trace, msg)
   def debug(msg), do: log(:debug, msg)
@@ -68,6 +68,8 @@ defmodule Applet.Api do
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
   def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
+  def name(), do: Path.basename(route(), ".exs")
+  def file(), do: Path.basename(route())
 
   def async(fun) when is_function(fun, 0), do: call({:async, fun})
 
@@ -130,10 +132,45 @@ defmodule Applet.Api do
     end
   end
 
+  def eval(route) do
+    code = Applet.load!(route)
+    eval(route, code)
+  end
+
+  def eval(route, code) do
+    {{result, bindings}, diagnostics} =
+      Code.with_diagnostics(fn ->
+        try do
+          Code.eval_string(code, [], file: route)
+        rescue
+          error -> {{error, __STACKTRACE__}, []}
+        end
+      end)
+
+    Enum.each(diagnostics, fn
+      %{severity: :warning, position: p, message: m, file: f} -> warn("#{f}:#{p} #{m}")
+      %{severity: :error, position: p, message: m, file: f} -> error("#{f}:#{p} #{m}")
+    end)
+
+    # too much error types to ensure full coverage
+    case result do
+      {%CompileError{file: f, line: p, description: m}, _} ->
+        error("#{f}:#{p} #{m}")
+
+      {ex = %{__exception__: true}, st} ->
+        error("#{route}: #{inspect(ex)} #{inspect(st)}")
+
+      result ->
+        info("#{route}: #{inspect(result)}")
+    end
+
+    {result, bindings |> Enum.into(%{})}
+  end
+
   defp log(type, msg) do
-    name = call(:name)
-    Bus.broadcast!(:logger, {name, type, msg})
-    Bus.broadcast!({:logger, name, type}, msg)
+    route = route()
+    Bus.broadcast!(:logger, {route, type, msg})
+    Bus.broadcast!({:logger, route, type}, msg)
   end
 
   defp call(args), do: apply(Process.get(:__api__), [args])

@@ -7,7 +7,7 @@ defmodule AppletAsyncBusTest do
   end
 
   test "async/bus applet" do
-    name = "async/bus"
+    route = "async/bus"
 
     code = """
     use Applet.Api
@@ -22,16 +22,12 @@ defmodule AppletAsyncBusTest do
         {:event, :sargs, :bargs} -> :ok
       end
     end) |> Api.await()
+
+    Applet.Unique.register!(:test, \"#{route}\")
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
-
-    Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {{:ok, :ok}, %{}}}}] = Unique.lookup({:applet, name})
-    end)
-
-    :ok = Applet.stop!(name)
+    Applet.start!(route, code)
+    Utils.wait_success(20, 20, fn -> assert [{_, ^route}] = Unique.lookup(:test) end)
+    Applet.stop!(route)
   end
 end

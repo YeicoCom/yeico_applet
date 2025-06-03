@@ -7,7 +7,7 @@ defmodule AppletModbusTest do
   end
 
   test "modbus applet" do
-    name = "modbus"
+    route = "modbus"
 
     code = """
     # run with: mix slave
@@ -51,17 +51,12 @@ defmodule AppletModbusTest do
 
     :ok = Master.stop(master)
     :ok = Slave.stop(slave)
+
+    Applet.Unique.register!(:test, \"#{route}\")
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
-
-    Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {:ok, %{slave: _, port: _, model: _, master: _}}}}] =
-               Unique.lookup({:applet, name})
-    end)
-
-    :ok = Applet.stop!(name)
+    Applet.start!(route, code)
+    Utils.wait_success(20, 20, fn -> assert [{_, ^route}] = Unique.lookup(:test) end)
+    Applet.stop!(route)
   end
 end

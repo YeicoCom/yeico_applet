@@ -2,23 +2,23 @@ defmodule Applet.Runner do
   use Applet.Alias
   use Applet.Api
 
-  def start_link(name, code) do
-    state = %{name: name, code: code}
+  def start_link(route, code) do
+    state = %{route: route, code: code}
     {:ok, spawn_link(fn -> init(state) end)}
   end
 
-  defp init(%{name: name, code: code}) do
-    :ok = Applet.stop!(name)
-    Unique.register!({:applet, name}, nil)
-    Multiple.register!(:applet, name)
+  defp init(%{route: route, code: code}) do
+    :ok = Applet.stop!(route)
+    Unique.register!({:applet, route}, nil)
+    Multiple.register!(:applet, route)
     start = {Task.Supervisor, :start_link, []}
-    spec = %{id: {name, :tasks}, start: start, restart: :temporary}
+    spec = %{id: {route, :tasks}, start: start, restart: :temporary}
     {:ok, tasks} = Dynamic.start_child(spec)
 
     api =
       fn
-        :name ->
-          name
+        :route ->
+          route
 
         {:await, task, timeout} ->
           Task.await(task, timeout)
@@ -27,7 +27,7 @@ defmodule Applet.Runner do
           api = Process.get(:__api__)
 
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet, name}, :async)
+            Multiple.register!({:applet, route}, :async)
             Process.put(:__api__, api)
             Utils.run_safe(fun)
           end)
@@ -36,7 +36,7 @@ defmodule Applet.Runner do
           api = Process.get(:__api__)
 
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet, name}, :async)
+            Multiple.register!({:applet, route}, :async)
             Process.put(:__api__, api)
             res1 = Utils.run_safe(fun1)
             res2 = Utils.run_safe(fun2)
@@ -47,25 +47,13 @@ defmodule Applet.Runner do
     Process.put(:__api__, api)
 
     unless Applet.started?() do
-      Api.info("APPLET AWAITING #{name}")
+      Api.info("Applet waiting #{route}")
       Applet.await()
     end
 
-    Api.info("APPLET STARTING #{name}")
-
-    eval = fn ->
-      {result, bindings} = Code.eval_string(code, [], file: "APPLET:#{name}")
-      {result, bindings |> Enum.into(%{})}
-    end
-
-    result = Utils.run_safe(eval)
-    Unique.update!({:applet, name}, result)
-
-    case result do
-      {:ok, res} -> Api.info("APPLET EVAL RESULT #{inspect(res)}")
-      {:error, res} -> Api.error("APPLET EVAL RESULT #{inspect(res)}")
-    end
-
+    Api.info("Applet starting #{route}")
+    {result, bindings} = Api.eval(route, code)
+    Unique.update!({:applet, route}, {result, bindings})
     :timer.sleep(:infinity)
   end
 end

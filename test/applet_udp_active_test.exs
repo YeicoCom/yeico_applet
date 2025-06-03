@@ -7,7 +7,7 @@ defmodule AppletUdpActiveTest do
   end
 
   test "udp/active applet" do
-    name = "udp/active"
+    route = "udp/active"
 
     code = """
     use Applet.Api
@@ -45,14 +45,12 @@ defmodule AppletUdpActiveTest do
     :ok = Udp.close(client)
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+    {:ok, pid} = Applet.start!(route, code)
 
     Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
+      assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
     end)
 
-    :ok = Applet.stop!(name)
+    Applet.stop!(route)
   end
 end

@@ -1,4 +1,4 @@
-defmodule AppletSigilHTest do
+defmodule AppletWhoamiTest do
   use ExUnit.Case, async: false
   use Applet.Alias
 
@@ -6,26 +6,20 @@ defmodule AppletSigilHTest do
     Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
   end
 
-  test "sigil_H applet" do
-    route = "sigil_H"
+  test "whoami applet" do
+    route = "_dir/_name.exs"
+    code = "
+      use Applet.Api
 
-    code = """
-    use Applet.Api
-    use Applet.Api.Live
-
-    render = fn assigns ->
-      ~H\"""
-      {@count}
-      \"""
-    end
-
-    render.(%{count: 1})
-    """
+      {Api.path(), Api.route(), Api.name(), Api.file()}
+    "
 
     {:ok, pid} = Applet.start!(route, code)
 
+    path = "#{File.cwd!()}/applets"
+
     Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {%Phoenix.LiveView.Rendered{}, %{}}}] =
+      assert [{^pid, {{^path, "_dir/_name.exs", "_name", "_name.exs"}, %{}}}] =
                Unique.lookup({:applet, route})
     end)
 

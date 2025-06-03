@@ -10,11 +10,16 @@ defmodule Applet.Server do
   end
 
   def start_link() do
-    config = Application.get_env(:applet, __MODULE__)
+    config = config()
     port = config[:port]
-    colors = config[:colors] |> Enum.into(%{})
+    colors = config[:colors]
     task = Tasks.async(fn -> init(port, colors) end)
     {:ok, Api.pid(task)}
+  end
+
+  def config() do
+    config = Application.get_env(:applet, __MODULE__)
+    %{port: config[:port], colors: config[:colors] |> Enum.into(%{})}
   end
 
   defp init(port, colors) do
@@ -27,7 +32,7 @@ defmodule Applet.Server do
     end)
 
     {:ok, server} = Tcp.listen("127.0.0.1", port, line: true)
-    Logger.notice("Applet Server port #{server.port}")
+    Logger.notice("Applet server port #{server.port}")
     accept(server, colors)
   end
 
@@ -44,30 +49,30 @@ defmodule Applet.Server do
 
     state =
       case cmd do
-        "save " <> path ->
-          path = String.trim(path)
-          Logger.notice("Applet client #{client.port} save #{path}")
-          {name, data} = Applet.load!(path)
-          :ok = Store.upsert(name, data)
+        "save " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} save #{route}")
+          code = Applet.load!(route)
+          :ok = Store.upsert(route, code)
           state
 
-        "delete " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} delete #{name}")
-          :ok = Store.delete(name)
+        "delete " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} delete #{route}")
+          :ok = Store.delete(route)
           state
 
-        "start " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} start #{name}")
-          [{^name, data}] = Store.lookup(name)
-          {:ok, _pid} = Applet.start!(name, data)
+        "start " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} start #{route}")
+          [{^route, data}] = Store.lookup(route)
+          {:ok, _pid} = Applet.start!(route, data)
           state
 
-        "stop " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} stop #{name}")
-          :ok = Applet.stop!(name)
+        "stop " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} stop #{route}")
+          :ok = Applet.stop!(route)
           state
 
         "list saved\n" ->
@@ -94,37 +99,37 @@ defmodule Applet.Server do
           diff = NaiveDateTime.diff(local, utc)
           Map.put(state, :localdiff, diff)
 
-        "trace " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} trace #{name}")
-          Api.Bus.subscribe!({:logger, name, :trace}, client)
-          Api.Bus.subscribe!({:logger, name, :debug}, client)
-          Api.Bus.subscribe!({:logger, name, :info}, client)
-          Api.Bus.subscribe!({:logger, name, :warn}, client)
-          Api.Bus.subscribe!({:logger, name, :error}, client)
+        "trace " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} trace #{route}")
+          Api.Bus.subscribe!({:logger, route, :trace}, client)
+          Api.Bus.subscribe!({:logger, route, :debug}, client)
+          Api.Bus.subscribe!({:logger, route, :info}, client)
+          Api.Bus.subscribe!({:logger, route, :warn}, client)
+          Api.Bus.subscribe!({:logger, route, :error}, client)
           :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, name, state)
+          log_loop(client, route, state)
           state
 
-        "debug " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} debug #{name}")
-          Api.Bus.subscribe!({:logger, name, :debug}, client)
-          Api.Bus.subscribe!({:logger, name, :info}, client)
-          Api.Bus.subscribe!({:logger, name, :warn}, client)
-          Api.Bus.subscribe!({:logger, name, :error}, client)
+        "debug " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} debug #{route}")
+          Api.Bus.subscribe!({:logger, route, :debug}, client)
+          Api.Bus.subscribe!({:logger, route, :info}, client)
+          Api.Bus.subscribe!({:logger, route, :warn}, client)
+          Api.Bus.subscribe!({:logger, route, :error}, client)
           :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, name, state)
+          log_loop(client, route, state)
           state
 
-        "info " <> name ->
-          name = String.trim(name)
-          Logger.notice("Applet client #{client.port} info #{name}")
-          Api.Bus.subscribe!({:logger, name, :info}, client)
-          Api.Bus.subscribe!({:logger, name, :warn}, client)
-          Api.Bus.subscribe!({:logger, name, :error}, client)
+        "info " <> route ->
+          route = String.trim(route)
+          Logger.notice("Applet client #{client.port} info #{route}")
+          Api.Bus.subscribe!({:logger, route, :info}, client)
+          Api.Bus.subscribe!({:logger, route, :warn}, client)
+          Api.Bus.subscribe!({:logger, route, :error}, client)
           :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, name, state)
+          log_loop(client, route, state)
           state
       end
 
@@ -132,31 +137,18 @@ defmodule Applet.Server do
     serve(client, state)
   end
 
-  defp log_loop(client, name, state = %{colors: colors}) do
+  defp log_loop(client, route, state = %{colors: colors}) do
     receive do
-      {{:logger, ^name, type}, ^client, msg} ->
+      {{:logger, ^route, type}, ^client, msg} ->
         ansicolor = Map.get(state, :ansicolor, false)
         color = if ansicolor, do: colors[type]
-        type = type |> Atom.to_string() |> String.upcase()
         localdiff = Map.get(state, :localdiff, 0)
         utc = NaiveDateTime.utc_now()
         now = NaiveDateTime.add(utc, localdiff, :second)
-        :ok = Tcp.write(client, log_io(color, now, type, msg))
+        log = Applet.log(color, now, type, msg)
+        :ok = Tcp.write(client, log)
     end
 
-    log_loop(client, name, state)
-  end
-
-  defp log_io(color, now, type, msg) when is_binary(msg) do
-    [
-      if(color, do: color, else: ""),
-      NaiveDateTime.to_iso8601(now),
-      " ",
-      type,
-      " ",
-      msg,
-      if(color, do: IO.ANSI.reset(), else: ""),
-      "\n"
-    ]
+    log_loop(client, route, state)
   end
 end

@@ -7,7 +7,7 @@ defmodule AppletUdpPassiveTest do
   end
 
   test "udp/passive applet" do
-    name = "udp/passive"
+    route = "udp/passive"
 
     code = """
     use Applet.Api
@@ -44,14 +44,12 @@ defmodule AppletUdpPassiveTest do
     :ok = Udp.close(client)
     """
 
-    {:ok, pid} = Applet.start!(name, code)
-
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^name}] = Multiple.lookup(:applet) end)
+    {:ok, pid} = Applet.start!(route, code)
 
     Utils.wait_success(20, 20, fn ->
-      assert [{^pid, {:ok, {:ok, %{}}}}] = Unique.lookup({:applet, name})
+      assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
     end)
 
-    :ok = Applet.stop!(name)
+    Applet.stop!(route)
   end
 end
