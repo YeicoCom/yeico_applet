@@ -1,6 +1,11 @@
 defmodule Applet do
   use Applet.Alias
 
+  def start() do
+    Shared.put("applets:path", path())
+    Shared.put("applets:started", true)
+  end
+
   def path() do
     Shared.get("applets:path", "#{File.cwd!()}/applets")
   end

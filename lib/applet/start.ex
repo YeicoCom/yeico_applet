@@ -14,8 +14,7 @@ defmodule Applet.Start do
 
   defp init() do
     true = Process.register(self(), __MODULE__)
-    Shared.put("applets:path", Applet.path())
-    Shared.put("applets:started", true)
+    Applet.start()
     :timer.sleep(:infinity)
   end
 end

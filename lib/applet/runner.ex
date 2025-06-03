@@ -44,6 +44,7 @@ defmodule Applet.Runner do
           end)
       end
 
+    Applet.await()
     Process.put(:__api__, api)
     Api.info("APPLET STARTING #{name}")
 
