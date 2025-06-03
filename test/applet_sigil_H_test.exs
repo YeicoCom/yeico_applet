@@ -11,6 +11,7 @@ defmodule AppletSigilHTest do
 
     code = """
     use Applet.Api
+    use Applet.Api.Live
 
     render = fn assigns ->
       ~H\"""

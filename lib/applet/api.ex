@@ -1,8 +1,6 @@
 defmodule Applet.Api do
   defmacro __using__(_) do
     quote do
-      import Applet.Api, only: [sigil_H: 2]
-
       alias Applet.Api.Bus
       alias Applet.Api.Adb
       alias Applet.Api.Ddb
@@ -14,37 +12,50 @@ defmodule Applet.Api do
     end
   end
 
+  defmodule Live do
+    defmacro sigil_H({:<<>>, meta, [expr]}, modifiers)
+             when modifiers == [] or modifiers == ~c"noformat" do
+      if not Macro.Env.has_var?(__CALLER__, {:assigns, nil}) do
+        raise "~H requires a variable named \"assigns\" to exist and be set to a map"
+      end
+
+      caller =
+        __CALLER__
+        |> Map.put(:module, Applet.Script)
+        |> Map.put(:function, {:render, 1})
+
+      options = [
+        engine: Phoenix.LiveView.TagEngine,
+        file: caller.file,
+        line: caller.line + 1,
+        caller: caller,
+        indentation: meta[:indentation] || 0,
+        source: expr,
+        tag_handler: Phoenix.LiveView.HTMLEngine
+      ]
+
+      EEx.compile_string(expr, options)
+    end
+
+    defmacro __using__(_) do
+      quote do
+        import Phoenix.Component, except: [sigil_H: 2]
+        import Applet.Api.Live, only: [sigil_H: 2]
+        alias Phoenix.LiveView.JS
+        import Phoenix.LiveView
+        import Phoenix.HTML
+      end
+    end
+  end
+
   # https://elixirforum.com/t/can-liveview-ui-be-dynamically-loaded-using-h/47943/9#
   # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_component.ex
+  # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_live_view.ex
   # use Phoenix.Component
   # expected %Phoenix.LiveView.Rendered{}
 
   alias Applet.Utils
   alias Applet.Api.Bus
-
-  defmacro sigil_H({:<<>>, meta, [expr]}, modifiers)
-           when modifiers == [] or modifiers == ~c"noformat" do
-    if not Macro.Env.has_var?(__CALLER__, {:assigns, nil}) do
-      raise "~H requires a variable named \"assigns\" to exist and be set to a map"
-    end
-
-    caller =
-      __CALLER__
-      |> Map.put(:module, Applet.Script)
-      |> Map.put(:function, {:render, 1})
-
-    options = [
-      engine: Phoenix.LiveView.TagEngine,
-      file: caller.file,
-      line: caller.line + 1,
-      caller: caller,
-      indentation: meta[:indentation] || 0,
-      source: expr,
-      tag_handler: Phoenix.LiveView.HTMLEngine
-    ]
-
-    EEx.compile_string(expr, options)
-  end
 
   def name(), do: call(:name)
   def wait(), do: Applet.wait()
