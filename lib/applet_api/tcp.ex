@@ -50,6 +50,10 @@ defmodule Applet.Api.Tcp do
     :gen_tcp.send(socket, data)
   end
 
+  def owner(%{socket: socket}, %Task{pid: pid}) do
+    :gen_tcp.controlling_process(socket, pid)
+  end
+
   def owner(%{socket: socket}, pid) do
     :gen_tcp.controlling_process(socket, pid)
   end

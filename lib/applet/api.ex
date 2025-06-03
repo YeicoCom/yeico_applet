@@ -19,6 +19,7 @@ defmodule Applet.Api do
   # use Phoenix.Component
   # expected %Phoenix.LiveView.Rendered{}
 
+  alias Applet.Utils
   alias Applet.Api.Bus
 
   defmacro sigil_H({:<<>>, meta, [expr]}, modifiers)
@@ -68,6 +69,53 @@ defmodule Applet.Api do
     fn arg ->
       Process.put(:__api__, api)
       fun.(arg)
+    end
+  end
+
+  def defer(fun) when is_function(fun, 0) do
+    api = Process.get(:__api__)
+    pid = self()
+
+    spawn(fn ->
+      Process.put(:__api__, api)
+      ref = Process.monitor(pid)
+
+      receive do
+        {:DOWN, ^ref, _, ^pid, _} -> :ok
+      end
+
+      Utils.run_safe(fun)
+    end)
+  end
+
+  def post(topic, msg) do
+    Bus.broadcast!({Bus, :post, topic}, msg)
+  end
+
+  def on(topic, fun) when is_function(fun, 1) do
+    loop = fn loop ->
+      msg =
+        receive do
+          {{Bus, :post, ^topic}, ^fun, msg} -> msg
+        end
+
+      Utils.run_safe(fn -> fun.(msg) end)
+
+      loop.(loop)
+    end
+
+    pid = self()
+
+    wrap = fn ->
+      Bus.subscribe!({Bus, :post, topic}, fun)
+      send(pid, {Bus, :on, topic, fun})
+      loop.(loop)
+    end
+
+    task = async(wrap)
+
+    receive do
+      {Bus, :on, ^topic, ^fun} -> task
     end
   end
 

@@ -44,6 +44,10 @@ defmodule Applet.Api.Udp do
     :gen_udp.send(socket, {ip, port}, data)
   end
 
+  def owner(%{socket: socket}, %Task{pid: pid}) do
+    :gen_udp.controlling_process(socket, pid)
+  end
+
   def owner(%{socket: socket}, pid) do
     :gen_udp.controlling_process(socket, pid)
   end
