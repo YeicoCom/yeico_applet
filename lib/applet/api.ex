@@ -70,6 +70,7 @@ defmodule Applet.Api do
   def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
   def name(), do: Path.basename(route(), ".exs")
   def file(), do: Path.basename(route())
+  def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
 
   def async(fun) when is_function(fun, 0), do: call({:async, fun})
 
@@ -89,6 +90,7 @@ defmodule Applet.Api do
     api = Process.get(:__api__)
     pid = self()
 
+    # spawn to avoid sudden death
     spawn(fn ->
       Process.put(:__api__, api)
       ref = Process.monitor(pid)

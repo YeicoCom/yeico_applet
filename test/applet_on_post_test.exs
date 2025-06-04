@@ -13,7 +13,13 @@ defmodule AppletOnPostTest do
     code = """
     use Applet.Api
 
-    Api.on(:topic, &Adb.update(:topic, 0, fn c -> c + &1 end))
+    Api.on(:topic, fn v ->
+      Adb.update(:topic, 0, fn c -> c + v end)
+      case v do
+        0 -> throw :stone
+        _ -> raise "child"
+      end
+    end)
     Api.post(:topic, 0)
     Api.post(:topic, 1)
     Api.post(:topic, 2)
