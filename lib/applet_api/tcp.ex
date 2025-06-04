@@ -6,10 +6,12 @@ defmodule Applet.Api.Tcp do
     packet = if line, do: :line, else: :raw
     opts = [:binary, packet: packet, active: active]
     ip = if is_binary(ip), do: parse(ip), else: ip
-    {:ok, socket} = :gen_tcp.connect(ip, port, opts, timeout)
-    {:ok, {ip, port}} = :inet.sockname(socket)
-    {:ok, peer} = :inet.peername(socket)
-    {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
+
+    with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, timeout) do
+      {:ok, {ip, port}} = :inet.sockname(socket)
+      {:ok, peer} = :inet.peername(socket)
+      {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
+    end
   end
 
   def listen(ip, port, opts \\ []) do
@@ -18,9 +20,11 @@ defmodule Applet.Api.Tcp do
     packet = if line, do: :line, else: :raw
     ip = if is_binary(ip), do: parse(ip), else: ip
     opts = [:binary, ip: ip, packet: packet, active: active, reuseaddr: true]
-    {:ok, socket} = :gen_tcp.listen(port, opts)
-    {:ok, {ip, port}} = :inet.sockname(socket)
-    {:ok, %{ip: ip, port: port, socket: socket}}
+
+    with {:ok, socket} <- :gen_tcp.listen(port, opts) do
+      {:ok, {ip, port}} = :inet.sockname(socket)
+      {:ok, %{ip: ip, port: port, socket: socket}}
+    end
   end
 
   def accept(%{socket: socket}) do

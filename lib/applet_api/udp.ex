@@ -2,21 +2,25 @@ defmodule Applet.Api.Udp do
   def connect(ip, port, opts \\ []) do
     active = Keyword.get(opts, :active, false)
     opts = [:binary, active: active]
-    {:ok, socket} = :gen_udp.open(0, opts)
-    ip = if is_binary(ip), do: parse(ip), else: ip
-    :ok = :gen_udp.connect(socket, ip, port)
-    {:ok, {ip, port}} = :inet.sockname(socket)
-    {:ok, peer} = :inet.peername(socket)
-    {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
+
+    with {:ok, socket} <- :gen_udp.open(0, opts) do
+      ip = if is_binary(ip), do: parse(ip), else: ip
+      :ok = :gen_udp.connect(socket, ip, port)
+      {:ok, {ip, port}} = :inet.sockname(socket)
+      {:ok, peer} = :inet.peername(socket)
+      {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
+    end
   end
 
   def listen(ip, port, opts \\ []) do
     active = Keyword.get(opts, :active, false)
     ip = if is_binary(ip), do: parse(ip), else: ip
     opts = [:binary, ip: ip, active: active]
-    {:ok, socket} = :gen_udp.open(port, opts)
-    {:ok, {ip, port}} = :inet.sockname(socket)
-    {:ok, %{ip: ip, port: port, socket: socket}}
+
+    with {:ok, socket} <- :gen_udp.open(port, opts) do
+      {:ok, {ip, port}} = :inet.sockname(socket)
+      {:ok, %{ip: ip, port: port, socket: socket}}
+    end
   end
 
   def read(%{socket: socket}, timeout \\ :infinity) do
