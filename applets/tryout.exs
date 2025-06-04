@@ -11,4 +11,4 @@
 # f.()
 use Applet.Api
 
-Api.eval("#{Api.name()}/#{Api.file()}")
+Api.evalf("#{Api.name()}/#{Api.file()}")

@@ -134,16 +134,16 @@ defmodule Applet.Api do
     end
   end
 
-  def eval(route) do
+  def evalf(route, binding \\ []) do
     code = Applet.load!(route)
-    eval(route, code)
+    evals(route, code, binding)
   end
 
-  def eval(route, code) do
-    {{result, bindings}, diagnostics} =
+  def evals(route, code, binding \\ []) do
+    {{result, binding}, diagnostics} =
       Code.with_diagnostics(fn ->
         try do
-          Code.eval_string(code, [], file: route)
+          Code.eval_string(code, binding, file: route)
         rescue
           error -> {{error, __STACKTRACE__}, []}
         end
@@ -166,7 +166,7 @@ defmodule Applet.Api do
         info("#{route}: #{inspect(result)}")
     end
 
-    {result, bindings |> Enum.into(%{})}
+    {result, binding |> Enum.into(%{})}
   end
 
   defp log(type, msg) do

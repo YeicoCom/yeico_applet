@@ -12,7 +12,7 @@ defmodule AppletEvalTest do
     code = """
     use Applet.Api
 
-    Api.eval("\#{Api.name()}/\#{Api.file()}")
+    Api.evalf("\#{Api.name()}/\#{Api.file()}")
     """
 
     {:ok, pid} = Applet.start!(route, code)
