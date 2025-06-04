@@ -73,6 +73,8 @@ defmodule Applet do
   end
 
   def log(color, dt, type, msg) when is_binary(msg) do
+    dt = NaiveDateTime.truncate(dt, :millisecond)
+
     [
       if(color, do: color, else: ""),
       NaiveDateTime.to_iso8601(dt),
@@ -120,7 +122,9 @@ defmodule Applet do
             :ok
 
           {{:logger, ^route, type}, nil, msg} ->
+            utc = NaiveDateTime.utc_now()
             now = NaiveDateTime.local_now()
+            now = Map.put(now, :microsecond, utc.microsecond)
             IO.write(log(colors[type], now, type, msg))
             loop.(loop)
         end
