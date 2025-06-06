@@ -90,16 +90,16 @@ defmodule AppletServerTest do
     end)
   end
 
-  test "applet server cleanup" do
+  test "applet server reset" do
     :ok = Store.upsert("test.exs", ":ok")
     :ok = Store.upsert("test/test.exs", ":ok")
     {:ok, _} = Applet.start!("test.exs")
     port = Application.get_env(:applet, Server)[:port]
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "cleanup\n")
-    assert {:ok, "ok cleanup\n"} = Tcp.read(client)
+    :ok = Tcp.write(client, "reset\n")
+    assert {:ok, "ok reset\n"} = Tcp.read(client)
     :ok = Tcp.close(client)
-    assert [] = Applet.running()
+    assert [] = Applet.started()
     assert [] = Applet.stored()
   end
 end

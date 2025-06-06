@@ -78,14 +78,14 @@ defmodule Applet do
   end
 
   def reboot!() do
-    list = running()
+    list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
     list = stored()
     list |> Enum.each(fn route -> start!(route) end)
   end
 
   def restart!() do
-    list = running()
+    list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
     list |> Enum.each(fn {_, route} -> start!(route) end)
   end
@@ -93,11 +93,11 @@ defmodule Applet do
   def reset!() do
     list = stored()
     list |> Enum.each(fn route -> :ok = Store.delete(route) end)
-    list = running()
+    list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
   end
 
-  def running() do
+  def started() do
     Multiple.lookup(:applet)
   end
 

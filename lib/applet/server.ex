@@ -82,19 +82,19 @@ defmodule Applet.Server do
         :ok = Applet.restart!()
         state
 
-      "cleanup\n" ->
-        Logger.notice("Applet client #{client.port} cleanup")
+      "reset\n" ->
+        Logger.notice("Applet client #{client.port} reset")
         :ok = Applet.reset!()
         state
 
       "list stored\n" ->
         fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
-        Store.keys() |> Enum.each(fun)
+        Applet.stored() |> Enum.each(fun)
         state
 
       "list started\n" ->
         fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
-        Multiple.lookup(:applet) |> Enum.each(fun)
+        Applet.started() |> Enum.each(fun)
         state
 
       "ansicolor " <> ansicolor ->
