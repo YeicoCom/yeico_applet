@@ -27,3 +27,12 @@ Applet.run!("tryout/tryout.exs")
 ## Fixme
 
 - [ ] app shutdowns from time to time on recompile from eix
+
+## Roadmap
+
+- [x] run and trace from server
+- [x] reboot, restart, and clean tasks
+- [x] run! with log: <level> opts
+- [x] rename saved to stored
+- [ ] WONTFIX command serializer
+- [ ] WONTFIX log from iex

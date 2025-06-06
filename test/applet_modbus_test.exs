@@ -3,7 +3,7 @@ defmodule AppletModbusTest do
   use Applet.Alias
 
   setup do
-    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
+    Applet.reset!()
   end
 
   test "modbus applet" do

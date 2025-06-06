@@ -4,7 +4,7 @@ defmodule AppletDeferTest do
   use Applet.Api
 
   setup do
-    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
+    Applet.reset!()
   end
 
   test "defer applet" do

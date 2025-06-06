@@ -4,12 +4,7 @@ defmodule AppletLogTest do
   use Applet.Api
 
   setup do
-    Store.delete_all()
-
-    Multiple.lookup(:applet)
-    |> Enum.each(fn {_, n} -> :ok = Applet.stop!(n) end)
-
-    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
+    Applet.reset!()
   end
 
   test "applet trace" do

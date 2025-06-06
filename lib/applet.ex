@@ -2,6 +2,9 @@ defmodule Applet do
   use Applet.Alias
   alias Applet.Api.Bus
 
+  @delay 1
+  @times 4_000
+
   def start() do
     Shared.put("applets:path", path())
     Shared.put("applets:started", true)
@@ -49,42 +52,57 @@ defmodule Applet do
   # functions only to avoid poluting module space
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
-  def start!(route, code) do
+  def start!(route, code \\ nil) do
+    code = if code, do: code, else: load!(route)
     start = {Runner, :start_link, [route, code]}
     # temporary never restarted
     # dynamic supervisor requires but ignores id
     spec = %{id: route, start: start, restart: :temporary}
-    {:ok, _pid} = Dynamic.start_child(spec)
+    {:ok, pid} = Dynamic.start_child(spec)
+    fun = fn -> [{^pid, _}] = Unique.lookup({:applet, route}) end
+    :ok = Utils.wait_success(@delay, @times, fun)
+    {:ok, pid}
   end
 
-  def stop!(route, to \\ 5_000) when to > 0 do
+  def stop!(route) do
     :ok = Utils.kill_unique({:applet, route})
     :ok = Utils.kill_multiple({:applet, route})
-    :ok = Utils.wait_success(1, to, fn -> [] = Unique.lookup({:applet, route}) end)
-    :ok = Utils.wait_success(1, to, fn -> [] = Multiple.lookup({:applet, route}) end)
+    await!(route)
+  end
+
+  def await!(route) do
+    fun = fn -> [] = Unique.lookup({:applet, route}) end
+    :ok = Utils.wait_success(@delay, @times, fun)
+    fun = fn -> [] = Multiple.lookup({:applet, route}) end
+    :ok = Utils.wait_success(@delay, @times, fun)
+  end
+
+  def reboot!() do
+    list = running()
+    list |> Enum.each(fn {_, route} -> stop!(route) end)
+    list = stored()
+    list |> Enum.each(fn route -> start!(route) end)
+  end
+
+  def restart!() do
+    list = running()
+    list |> Enum.each(fn {_, route} -> stop!(route) end)
+    list |> Enum.each(fn {_, route} -> start!(route) end)
+  end
+
+  def reset!() do
+    list = stored()
+    list |> Enum.each(fn route -> :ok = Store.delete(route) end)
+    list = running()
+    list |> Enum.each(fn {_, route} -> stop!(route) end)
   end
 
   def running() do
     Multiple.lookup(:applet)
   end
 
-  def saved() do
+  def stored() do
     Store.keys()
-  end
-
-  def log(color, dt, type, msg) when is_binary(msg) do
-    dt = NaiveDateTime.truncate(dt, :millisecond)
-
-    [
-      if(color, do: color, else: ""),
-      NaiveDateTime.to_iso8601(dt),
-      " ",
-      type |> Atom.to_string() |> String.upcase(),
-      " ",
-      msg,
-      if(color, do: IO.ANSI.reset(), else: ""),
-      "\n"
-    ]
   end
 
   # for iex
@@ -93,18 +111,12 @@ defmodule Applet do
   # Applet.run!("tryout/tryout.exs")
   # runs ${PWD}/applets/tryout/tryout.exs
   # type INTRO to stop logging
-  def run!(route) do
-    Applet.start()
+  def run!(route, level \\ :trace) do
     code = Applet.load!(route)
 
     # Use Task because Tasks points to a different stdin
+    # handle async to avoid tainting the iex process
     Task.async(fn ->
-      Bus.subscribe!({:logger, route, :trace}, nil)
-      Bus.subscribe!({:logger, route, :debug}, nil)
-      Bus.subscribe!({:logger, route, :info}, nil)
-      Bus.subscribe!({:logger, route, :warn}, nil)
-      Bus.subscribe!({:logger, route, :error}, nil)
-
       pid = self()
 
       Task.async(fn ->
@@ -112,20 +124,22 @@ defmodule Applet do
         send(pid, {:stdin, :line, line})
       end)
 
-      Task.async(fn -> start!(route, code) end)
+      Applet.subscribe!(level, route, nil)
+      start!(route, code)
       config = Server.config()
       colors = config[:colors]
 
       loop = fn loop ->
         receive do
           {:stdin, :line, _line} ->
-            :ok
+            stop!(route)
 
           {{:logger, ^route, type}, nil, msg} ->
             utc = NaiveDateTime.utc_now()
             now = NaiveDateTime.local_now()
             now = Map.put(now, :microsecond, utc.microsecond)
-            IO.write(log(colors[type], now, type, msg))
+            log = Utils.fmt(colors[type], now, type, msg)
+            IO.write(log)
             loop.(loop)
         end
       end
@@ -133,7 +147,23 @@ defmodule Applet do
       loop.(loop)
     end)
     |> Task.await(:infinity)
+  end
 
-    stop!(route)
+  def subscribe!(level, route, sargs \\ nil)
+
+  def subscribe!(:trace, route, sargs) do
+    Bus.subscribe!({:logger, route, :trace}, sargs)
+    subscribe!(:debug, route, sargs)
+  end
+
+  def subscribe!(:debug, route, sargs) do
+    Bus.subscribe!({:logger, route, :debug}, sargs)
+    subscribe!(:info, route, sargs)
+  end
+
+  def subscribe!(:info, route, sargs) do
+    Bus.subscribe!({:logger, route, :info}, sargs)
+    Bus.subscribe!({:logger, route, :warn}, sargs)
+    Bus.subscribe!({:logger, route, :error}, sargs)
   end
 end

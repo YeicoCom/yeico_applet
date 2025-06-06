@@ -53,4 +53,19 @@ defmodule Applet.Utils do
       _ -> :ok
     end
   end
+
+  def fmt(color, dt, type, msg) when is_binary(msg) do
+    dt = NaiveDateTime.truncate(dt, :millisecond)
+
+    [
+      if(color, do: color, else: ""),
+      NaiveDateTime.to_iso8601(dt),
+      " ",
+      type |> Atom.to_string() |> String.upcase(),
+      " ",
+      msg,
+      if(color, do: IO.ANSI.reset(), else: ""),
+      "\n"
+    ]
+  end
 end

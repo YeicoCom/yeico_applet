@@ -2,6 +2,10 @@ defmodule AppletRunSafeTest do
   use ExUnit.Case, async: false
   use Applet.Alias
 
+  setup do
+    Applet.reset!()
+  end
+
   test "run_safe" do
     assert {:ok, "all good"} = Utils.run_safe(fn -> "all good" end)
 

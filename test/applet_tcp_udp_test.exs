@@ -4,7 +4,7 @@ defmodule AppletTcpUdpTest do
   use Applet.Api
 
   setup do
-    Utils.wait_success(20, 20, fn -> assert [] = Multiple.list() end)
+    Applet.reset!()
   end
 
   test "tcp listen and connect error" do

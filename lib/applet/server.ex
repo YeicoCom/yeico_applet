@@ -38,103 +38,120 @@ defmodule Applet.Server do
 
   defp accept(server, colors) do
     {:ok, client} = Tcp.accept(server)
-    run = fn -> serve(client, %{colors: colors}) end
-    clean = fn -> :ok = Tcp.close(client) end
-    %Task{} = Tasks.async(run, clean)
+    fun1 = fn -> serve(client, %{colors: colors}) end
+    fun2 = fn -> :ok = Tcp.close(client) end
+    %Task{} = Tasks.async(fun1, fun2)
     accept(server, colors)
   end
 
   defp serve(client, state) do
-    {:ok, cmd} = Tcp.read(client)
+    with {:ok, cmd} <- Tcp.read(client),
+         state = %{} <- serve(client, state, cmd) do
+      :ok = Tcp.write(client, ["ok ", cmd])
+      serve(client, state)
+    else
+      unexpected ->
+        Logger.notice("Applet client #{client.port} unexpected #{inspect(unexpected)}")
+    end
+  end
 
-    state =
-      case cmd do
-        "save " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} save #{route}")
-          code = Applet.load!(route)
-          :ok = Store.upsert(route, code)
-          state
+  defp serve(client, state, cmd) do
+    case cmd do
+      "install " <> route ->
+        route = String.trim(route)
+        Logger.notice("Applet client #{client.port} install #{route}")
+        code = Applet.load!(route)
+        :ok = Store.upsert(route, code)
+        {:ok, _pid} = Applet.start!(route, code)
+        state
 
-        "delete " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} delete #{route}")
-          :ok = Store.delete(route)
-          state
+      "uninstall " <> route ->
+        route = String.trim(route)
+        Logger.notice("Applet client #{client.port} uninstall #{route}")
+        :ok = Store.delete(route)
+        :ok = Applet.stop!(route)
+        state
 
-        "start " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} start #{route}")
-          [{^route, data}] = Store.lookup(route)
-          {:ok, _pid} = Applet.start!(route, data)
-          state
+      "reboot\n" ->
+        Logger.notice("Applet client #{client.port} reboot")
+        :ok = Applet.reboot!()
+        state
 
-        "stop " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} stop #{route}")
-          :ok = Applet.stop!(route)
-          state
+      "restart\n" ->
+        Logger.notice("Applet client #{client.port} restart")
+        :ok = Applet.restart!()
+        state
 
-        "list saved\n" ->
-          fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
-          Store.keys() |> Enum.each(fun)
-          state
+      "cleanup\n" ->
+        Logger.notice("Applet client #{client.port} cleanup")
+        :ok = Applet.reset!()
+        state
 
-        "list started\n" ->
-          fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
-          Multiple.lookup(:applet) |> Enum.each(fun)
-          state
+      "list stored\n" ->
+        fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
+        Store.keys() |> Enum.each(fun)
+        state
 
-        "ansicolor " <> ansicolor ->
-          ansicolor = String.trim(ansicolor)
-          Logger.notice("Applet client #{client.port} ansicolor #{ansicolor}")
-          ansicolor = String.to_existing_atom(ansicolor)
-          Map.put(state, :ansicolor, ansicolor)
+      "list started\n" ->
+        fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
+        Multiple.lookup(:applet) |> Enum.each(fun)
+        state
 
-        "localtime " <> localtime ->
-          localtime = String.trim(localtime)
-          Logger.notice("Applet client #{client.port} localtime #{localtime}")
-          local = NaiveDateTime.from_iso8601!(localtime)
-          utc = NaiveDateTime.utc_now()
-          diff = NaiveDateTime.diff(local, utc)
-          Map.put(state, :localdiff, diff)
+      "ansicolor " <> ansicolor ->
+        ansicolor = String.trim(ansicolor)
+        Logger.notice("Applet client #{client.port} ansicolor #{ansicolor}")
+        ansicolor = String.to_existing_atom(ansicolor)
+        Map.put(state, :ansicolor, ansicolor)
 
-        "trace " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} trace #{route}")
-          Api.Bus.subscribe!({:logger, route, :trace}, client)
-          Api.Bus.subscribe!({:logger, route, :debug}, client)
-          Api.Bus.subscribe!({:logger, route, :info}, client)
-          Api.Bus.subscribe!({:logger, route, :warn}, client)
-          Api.Bus.subscribe!({:logger, route, :error}, client)
-          :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, route, state)
-          state
+      "localtime " <> localtime ->
+        localtime = String.trim(localtime)
+        Logger.notice("Applet client #{client.port} localtime #{localtime}")
+        local = NaiveDateTime.from_iso8601!(localtime)
+        utc = NaiveDateTime.utc_now()
+        diff = NaiveDateTime.diff(local, utc)
+        Map.put(state, :localdiff, diff)
 
-        "debug " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} debug #{route}")
-          Api.Bus.subscribe!({:logger, route, :debug}, client)
-          Api.Bus.subscribe!({:logger, route, :info}, client)
-          Api.Bus.subscribe!({:logger, route, :warn}, client)
-          Api.Bus.subscribe!({:logger, route, :error}, client)
-          :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, route, state)
-          state
+      "run trace " <> route ->
+        run_loop("trace", client, state, route, cmd)
 
-        "info " <> route ->
-          route = String.trim(route)
-          Logger.notice("Applet client #{client.port} info #{route}")
-          Api.Bus.subscribe!({:logger, route, :info}, client)
-          Api.Bus.subscribe!({:logger, route, :warn}, client)
-          Api.Bus.subscribe!({:logger, route, :error}, client)
-          :ok = Tcp.write(client, ["ok ", cmd])
-          log_loop(client, route, state)
-          state
-      end
+      "run debug " <> route ->
+        run_loop("debug", client, state, route, cmd)
 
+      "run info " <> route ->
+        run_loop("info", client, state, route, cmd)
+
+      "trace " <> route ->
+        log_loop("trace", client, state, route, cmd)
+
+      "debug " <> route ->
+        log_loop("debug", client, state, route, cmd)
+
+      "info " <> route ->
+        log_loop("info", client, state, route, cmd)
+
+      _ ->
+        {:error, cmd}
+    end
+  end
+
+  defp run_loop(level, client, state, route, cmd) do
+    route = String.trim(route)
+    defer(fn -> Applet.stop!(route) end)
+    Logger.notice("Applet client #{client.port} run #{level} #{route}")
+    Applet.stop!(route)
+    code = Applet.load!(route)
+    log_loop(level, client, state, route, cmd, code)
+  end
+
+  defp log_loop(level, client, state, route, cmd, code \\ nil) do
+    async_read(client)
+    route = String.trim(route)
+    Logger.notice("Applet client #{client.port} #{level} #{route}")
+    level = String.to_existing_atom(level)
+    Applet.subscribe!(level, route, client)
+    if code, do: {:ok, _pid} = Applet.start!(route, code)
     :ok = Tcp.write(client, ["ok ", cmd])
-    serve(client, state)
+    log_loop(client, route, state)
   end
 
   defp log_loop(client, route, state = %{colors: colors}) do
@@ -145,10 +162,31 @@ defmodule Applet.Server do
         localdiff = Map.get(state, :localdiff, 0)
         utc = NaiveDateTime.utc_now()
         now = NaiveDateTime.add(utc, localdiff, :second)
-        log = Applet.log(color, now, type, msg)
+        log = Utils.fmt(color, now, type, msg)
         :ok = Tcp.write(client, log)
-    end
+        log_loop(client, route, state)
 
-    log_loop(client, route, state)
+      unexpected ->
+        unexpected
+    end
+  end
+
+  defp async_read(client) do
+    pid = self()
+    Tasks.async(fn -> send(pid, Tcp.read(client)) end)
+  end
+
+  defp defer(fun) do
+    pid = self()
+
+    Tasks.async(fn ->
+      ref = Process.monitor(pid)
+
+      receive do
+        {:DOWN, ^ref, _, ^pid, _} -> :ok
+      end
+
+      Utils.run_safe(fun)
+    end)
   end
 end
