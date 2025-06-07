@@ -8,8 +8,8 @@ config :applet, Applet.Server,
   port: 3999,
   colors: [
     trace: IO.ANSI.light_black(),
-    debug: IO.ANSI.blue(),
-    info: IO.ANSI.light_cyan(),
+    debug: IO.ANSI.light_cyan(),
+    info: IO.ANSI.blue(),
     warn: IO.ANSI.yellow(),
     error: IO.ANSI.light_red()
   ]
