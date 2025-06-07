@@ -169,10 +169,18 @@ defmodule Applet.Api do
     {result, binding |> Enum.into(%{})}
   end
 
-  defp log(type, msg) do
+  defp log(type, msg) when is_binary(msg) do
     route = route()
     Bus.broadcast!(:logger, {route, type, msg})
     Bus.broadcast!({:logger, route, type}, msg)
+    # for |> Api.trace()
+    msg
+  end
+
+  defp log(type, msg) do
+    log(type, inspect(msg))
+    # for |> Api.trace()
+    msg
   end
 
   defp call(args), do: apply(Process.get(:__api__), [args])
