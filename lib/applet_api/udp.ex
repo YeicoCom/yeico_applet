@@ -7,8 +7,9 @@ defmodule Applet.Api.Udp do
       ip = if is_binary(ip), do: parse(ip), else: ip
       :ok = :gen_udp.connect(socket, ip, port)
       {:ok, {ip, port}} = :inet.sockname(socket)
-      {:ok, peer} = :inet.peername(socket)
-      {:ok, %{ip: ip, port: port, socket: socket, peer: peer}}
+      {:ok, {pip, pport}} = :inet.peername(socket)
+      peer = %{ip: ips(pip), port: pport}
+      {:ok, %{ip: ips(ip), port: port, socket: socket, peer: peer}}
     end
   end
 
@@ -19,7 +20,7 @@ defmodule Applet.Api.Udp do
 
     with {:ok, socket} <- :gen_udp.open(port, opts) do
       {:ok, {ip, port}} = :inet.sockname(socket)
-      {:ok, %{ip: ip, port: port, socket: socket}}
+      {:ok, %{ip: ips(ip), port: port, socket: socket}}
     end
   end
 
@@ -59,6 +60,9 @@ defmodule Applet.Api.Udp do
   def close(%{socket: socket}) do
     :gen_udp.close(socket)
   end
+
+  def ips(ip) when is_binary(ip), do: ip
+  def ips({a, b, c, d}), do: "#{a}.#{b}.#{c}.#{d}"
 
   defp parse(ip) do
     :inet.parse_address(~c"#{ip}") |> elem(1)
