@@ -1,6 +1,8 @@
 defmodule Applet.Utils do
   use Applet.Alias
 
+  def hostname(), do: :inet.gethostname() |> elem(1)
+
   def run_safe(fun) when is_function(fun, 0) do
     try do
       {:ok, fun.()}

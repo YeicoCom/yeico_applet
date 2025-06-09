@@ -55,6 +55,7 @@ defmodule Applet.Api do
   # expected %Phoenix.LiveView.Rendered{}
 
   alias Applet.Utils
+  alias Applet.Shared
   alias Applet.Api.Bus
 
   def route(), do: call(:route)
@@ -67,10 +68,17 @@ defmodule Applet.Api do
   def sleep(), do: :timer.sleep(:infinity)
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
-  def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
-  def name(), do: Path.basename(route(), ".exs")
   def file(), do: Path.basename(route())
+  def name(), do: Path.basename(route(), ".exs")
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
+  def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
+
+  def query(), do: Shared.get("applets:query")
+  def query(:hostname), do: Utils.hostname()
+  def query(query), do: query().(query, [])
+  def query(query, opts), do: query().(query, opts)
+  def hook(hook), do: Shared.get("applets:hook:#{hook}")
+  def hook(hook, args), do: apply(hook(hook), args)
 
   def async(fun) when is_function(fun, 0), do: call({:async, fun})
 
