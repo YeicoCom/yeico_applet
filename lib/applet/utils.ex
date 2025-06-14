@@ -70,4 +70,17 @@ defmodule Applet.Utils do
       "\n"
     ]
   end
+
+  def defer(fun) when is_function(fun, 0) do
+    pid = self()
+
+    # spawn to avoid sudden death
+    spawn(fn ->
+      ref = Process.monitor(pid)
+
+      receive do
+        {:DOWN, ^ref, _, ^pid, _} -> run_safe(fun)
+      end
+    end)
+  end
 end

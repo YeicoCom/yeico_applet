@@ -80,10 +80,13 @@ defmodule Applet.Api do
   def hook(hook), do: Shared.get("applets:hook:#{hook}")
   def hook(hook, args), do: apply(hook(hook), args)
 
-  def async(fun) when is_function(fun, 0), do: call({:async, fun})
+  def async(fun) when is_function(fun, 0) do
+    call({:async, wrap_unhandled(fun)})
+  end
 
-  def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0),
-    do: call({:async, fun1, fun2})
+  def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0) do
+    call({:async, wrap_unhandled(fun1), wrap_unhandled(fun2)})
+  end
 
   def wrap(fun) when is_function(fun, 1) do
     api = Process.get(:__api__)
@@ -95,6 +98,7 @@ defmodule Applet.Api do
   end
 
   def defer(fun) when is_function(fun, 0) do
+    wrap = wrap_unhandled(fun)
     api = Process.get(:__api__)
     pid = self()
 
@@ -104,10 +108,8 @@ defmodule Applet.Api do
       ref = Process.monitor(pid)
 
       receive do
-        {:DOWN, ^ref, _, ^pid, _} -> :ok
+        {:DOWN, ^ref, _, ^pid, _} -> wrap.()
       end
-
-      Utils.run_safe(fun)
     end)
   end
 
@@ -122,7 +124,8 @@ defmodule Applet.Api do
           {{Bus, :post, ^topic}, ^fun, msg} -> msg
         end
 
-      Utils.run_safe(fn -> fun.(msg) end)
+      wrap = wrap_unhandled(fn -> fun.(msg) end)
+      wrap.()
 
       loop.(loop)
     end
@@ -192,4 +195,16 @@ defmodule Applet.Api do
   end
 
   defp call(args), do: apply(Process.get(:__api__), [args])
+
+  defp wrap_unhandled(fun) when is_function(fun, 0) do
+    fn -> Utils.run_safe(fun) |> unhandled() end
+  end
+
+  defp unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
+    debug("UNHANDLED #{type} error #{inspect(error)}")
+    trace("UNHANDLED #{type} stack #{inspect(stack)}")
+    res
+  end
+
+  defp unhandled(res), do: res
 end

@@ -11,6 +11,8 @@ defmodule Applet.Runner do
     :ok = Applet.stop!(route)
     Unique.register!({:applet, route}, nil)
     Multiple.register!(:applet, route)
+    Pubsub.broadcast!(:applet, {route, :init})
+    Utils.defer(fn -> Pubsub.broadcast!(:applet, {route, :exit}) end)
     start = {Task.Supervisor, :start_link, []}
     spec = %{id: {route, :tasks}, start: start, restart: :temporary}
     {:ok, tasks} = Dynamic.start_child(spec)
@@ -29,7 +31,7 @@ defmodule Applet.Runner do
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, route}, :async)
             Process.put(:__api__, api)
-            Utils.run_safe(fun)
+            fun.()
           end)
 
         {:async, fun1, fun2} ->
@@ -38,9 +40,7 @@ defmodule Applet.Runner do
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, route}, :async)
             Process.put(:__api__, api)
-            res1 = Utils.run_safe(fun1)
-            res2 = Utils.run_safe(fun2)
-            {res1, res2}
+            {fun1.(), fun2.()}
           end)
       end
 

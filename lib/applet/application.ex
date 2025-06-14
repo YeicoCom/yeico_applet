@@ -11,6 +11,7 @@ defmodule Applet.Application do
       Applet.Multiple,
       Applet.Dynamic,
       Applet.Unique,
+      Applet.Pubsub,
       Applet.Shared,
       Applet.Store,
       Applet.Tasks,

@@ -136,7 +136,7 @@ defmodule Applet.Server do
 
   defp run_loop(level, client, state, route, cmd) do
     route = String.trim(route)
-    defer(fn -> Applet.stop!(route) end)
+    Utils.defer(fn -> Applet.stop!(route) end)
     Logger.notice("Applet client #{client.port} run #{level} #{route}")
     Applet.stop!(route)
     code = Applet.load!(route)
@@ -174,19 +174,5 @@ defmodule Applet.Server do
   defp async_read(client) do
     pid = self()
     Tasks.async(fn -> send(pid, Tcp.read(client)) end)
-  end
-
-  defp defer(fun) do
-    pid = self()
-
-    Tasks.async(fn ->
-      ref = Process.monitor(pid)
-
-      receive do
-        {:DOWN, ^ref, _, ^pid, _} -> :ok
-      end
-
-      Utils.run_safe(fun)
-    end)
   end
 end
