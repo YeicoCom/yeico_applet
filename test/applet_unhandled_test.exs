@@ -22,7 +22,10 @@ defmodule AppletUnhandledTest do
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     Applet.stop!(route)
   end
 
@@ -41,11 +44,17 @@ defmodule AppletUnhandledTest do
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC1\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC2\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     Applet.stop!(route)
   end
 
@@ -66,11 +75,17 @@ defmodule AppletUnhandledTest do
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"MSG1\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"MSG2\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     Applet.stop!(route)
   end
 
@@ -89,7 +104,10 @@ defmodule AppletUnhandledTest do
     assert_receive {{:logger, "unhandled", :debug}, nil, msg}
     assert msg == "UNHANDLED rescue error %RuntimeError{message: \"DEFER\"}"
     assert_receive {{:logger, "unhandled", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
+
+    assert msg =~
+             "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"unhandled\", line: 2]"
+
     Applet.stop!(route)
   end
 end

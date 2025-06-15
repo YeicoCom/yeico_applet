@@ -26,21 +26,9 @@ defmodule Applet.Runner do
           Task.await(task, timeout)
 
         {:async, fun} ->
-          api = Process.get(:__api__)
-
           Task.Supervisor.async(tasks, fn ->
             Multiple.register!({:applet, route}, :async)
-            Process.put(:__api__, api)
             fun.()
-          end)
-
-        {:async, fun1, fun2} ->
-          api = Process.get(:__api__)
-
-          Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet, route}, :async)
-            Process.put(:__api__, api)
-            {fun1.(), fun2.()}
           end)
       end
 

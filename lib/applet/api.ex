@@ -72,6 +72,7 @@ defmodule Applet.Api do
   def file(), do: Path.basename(route())
   def name(), do: Path.basename(route(), ".exs")
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
+  def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
   def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
 
   def query(), do: Shared.get("applets:query")
@@ -82,36 +83,51 @@ defmodule Applet.Api do
   def hook(hook, args), do: apply(hook(hook), args)
 
   def async(fun) when is_function(fun, 0) do
-    call({:async, wrap_unhandled(fun)})
+    safe = wrap_safe(fun)
+    call({:async, wrap(safe)})
   end
 
   def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0) do
-    call({:async, wrap_unhandled(fun1), wrap_unhandled(fun2)})
+    safe1 = wrap_safe(fun1)
+    safe2 = wrap_safe(fun2)
+    call({:async, wrap(fn -> {safe1.(), safe2.()} end)})
+  end
+
+  def wrap(fun) when is_function(fun, 0) do
+    env = Process.get({:elixir, :eval_env})
+    api = Process.get(:__api__)
+
+    fn ->
+      Process.put({:elixir, :eval_env}, env)
+      Process.put(:__api__, api)
+      fun.()
+    end
   end
 
   def wrap(fun) when is_function(fun, 1) do
+    env = Process.get({:elixir, :eval_env})
     api = Process.get(:__api__)
 
     fn arg ->
+      Process.put({:elixir, :eval_env}, env)
       Process.put(:__api__, api)
       fun.(arg)
     end
   end
 
   def defer(fun) when is_function(fun, 0) do
-    wrap = wrap_unhandled(fun)
-    api = Process.get(:__api__)
+    safe = wrap_safe(fun)
     pid = self()
 
-    # spawn to avoid sudden death
-    spawn(fn ->
-      Process.put(:__api__, api)
+    entry = fn ->
       ref = Process.monitor(pid)
 
       receive do
-        {:DOWN, ^ref, _, ^pid, _} -> wrap.()
+        {:DOWN, ^ref, _, ^pid, _} -> safe.()
       end
-    end)
+    end
+
+    spawn(wrap(entry))
   end
 
   def post(topic, msg) do
@@ -119,27 +135,25 @@ defmodule Applet.Api do
   end
 
   def on(topic, fun) when is_function(fun, 1) do
-    loop = fn loop ->
-      msg =
-        receive do
-          {{Bus, :post, ^topic}, ^fun, msg} -> msg
-        end
+    safe = wrap_safe(fun)
 
-      wrap = wrap_unhandled(fn -> fun.(msg) end)
-      wrap.()
+    loop = fn loop ->
+      receive do
+        {{Bus, :post, ^topic}, ^fun, msg} -> safe.(msg)
+      end
 
       loop.(loop)
     end
 
     pid = self()
 
-    wrap = fn ->
+    init = fn ->
       Bus.subscribe!({Bus, :post, topic}, fun)
       send(pid, {Bus, :on, topic, fun})
       loop.(loop)
     end
 
-    task = async(wrap)
+    task = call({:async, wrap(init)})
 
     receive do
       {Bus, :on, ^topic, ^fun} -> task
@@ -197,8 +211,12 @@ defmodule Applet.Api do
 
   defp call(args), do: apply(Process.get(:__api__), [args])
 
-  defp wrap_unhandled(fun) when is_function(fun, 0) do
+  defp wrap_safe(fun) when is_function(fun, 0) do
     fn -> Utils.run_safe(fun) |> unhandled() end
+  end
+
+  defp wrap_safe(fun) when is_function(fun, 1) do
+    fn arg -> Utils.run_safe(fun, arg) |> unhandled() end
   end
 
   defp unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do

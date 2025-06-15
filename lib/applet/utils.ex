@@ -13,6 +13,16 @@ defmodule Applet.Utils do
     end
   end
 
+  def run_safe(fun, arg) when is_function(fun, 1) do
+    try do
+      {:ok, fun.(arg)}
+    rescue
+      error -> {:error, %{type: :rescue, error: error, stack: __STACKTRACE__}}
+    catch
+      error -> {:error, %{type: :catch, error: error, stack: __STACKTRACE__}}
+    end
+  end
+
   def kill_unique(key) do
     key
     |> Unique.lookup()
