@@ -5,6 +5,10 @@ defmodule Applet do
   @delay 1
   @times 4_000
 
+  def started?() do
+    Shared.get("applets:started", false)
+  end
+
   def start() do
     Shared.put("applets:path", path())
     Shared.put("applets:started", true)
@@ -17,20 +21,12 @@ defmodule Applet do
     Shared.get("applets:path", default)
   end
 
-  def path(value) do
-    Shared.put("applets:path", value)
-  end
-
   # for scripts and subscripts
   # tryout.exs
   # tryout/tryout.exs
   def load!(route) do
     path = Path.join(Applet.path(), route)
     File.read!(path)
-  end
-
-  def started?() do
-    Shared.get("applets:started", false)
   end
 
   def await(poll \\ 100) do
