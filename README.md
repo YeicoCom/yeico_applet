@@ -30,6 +30,7 @@ Applet.run!("tryout/tryout.exs")
 
 ## Roadmap
 
+- [ ] Thorough testing
 - [x] run and trace from server
 - [x] reboot, restart, and clean tasks
 - [x] run! with log: <level> opts

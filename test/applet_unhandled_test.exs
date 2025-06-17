@@ -1,9 +1,11 @@
 defmodule AppletUnhandledTest do
   use ExUnit.Case, async: false
   use Applet.Alias
+  use Applet.Api
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   # https://elixirforum.com/t/how-to-keep-the-code-eval-string-environment-on-async-execution/71285/2

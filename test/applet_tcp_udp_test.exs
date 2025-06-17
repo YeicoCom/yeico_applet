@@ -5,6 +5,7 @@ defmodule AppletTcpUdpTest do
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "tcp listen and connect error" do

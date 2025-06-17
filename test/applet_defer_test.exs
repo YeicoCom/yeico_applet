@@ -5,6 +5,7 @@ defmodule AppletDeferTest do
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "defer applet" do

@@ -1,9 +1,11 @@
 defmodule AppletAsyncBusTest do
   use ExUnit.Case, async: false
   use Applet.Alias
+  use Applet.Api
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "async/bus applet" do

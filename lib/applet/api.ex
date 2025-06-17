@@ -85,35 +85,23 @@ defmodule Applet.Api do
 
   def async(fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
-    call({:async, wrap(safe)})
+    call({:async, wrap_async(safe)})
   end
 
   def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0) do
     safe1 = wrap_safe(fun1)
     safe2 = wrap_safe(fun2)
-    call({:async, wrap(fn -> {safe1.(), safe2.()} end)})
+    call({:async, wrap_async(fn -> {safe1.(), safe2.()} end)})
   end
 
   def wrap(fun) when is_function(fun, 0) do
-    env = Process.get({:elixir, :eval_env})
-    api = Process.get(:__api__)
-
-    fn ->
-      Process.put({:elixir, :eval_env}, env)
-      Process.put(:__api__, api)
-      fun.()
-    end
+    safe = fn -> Utils.run_safe(fun) |> log_unhandled() |> unwrap_safe() end
+    wrap_async(safe)
   end
 
   def wrap(fun) when is_function(fun, 1) do
-    env = Process.get({:elixir, :eval_env})
-    api = Process.get(:__api__)
-
-    fn arg ->
-      Process.put({:elixir, :eval_env}, env)
-      Process.put(:__api__, api)
-      fun.(arg)
-    end
+    safe = fn arg -> Utils.run_safe(fun, arg) |> log_unhandled() |> unwrap_safe() end
+    wrap_async(safe)
   end
 
   def defer(fun) when is_function(fun, 0) do
@@ -128,7 +116,7 @@ defmodule Applet.Api do
       end
     end
 
-    spawn(wrap(entry))
+    spawn(wrap_async(entry))
   end
 
   def post(topic, msg) do
@@ -154,7 +142,7 @@ defmodule Applet.Api do
       loop.(loop)
     end
 
-    task = call({:async, wrap(init)})
+    task = call({:async, wrap_async(init)})
 
     receive do
       {Bus, :on, ^topic, ^fun} -> task
@@ -212,19 +200,51 @@ defmodule Applet.Api do
 
   defp call(args), do: apply(Process.get(:__api__), [args])
 
+  defp wrap_async(fun) when is_function(fun, 0) do
+    env = Process.get({:elixir, :eval_env})
+    api = Process.get(:__api__)
+
+    fn ->
+      Process.put({:elixir, :eval_env}, env)
+      Process.put(:__api__, api)
+      fun.()
+    end
+  end
+
+  defp wrap_async(fun) when is_function(fun, 1) do
+    env = Process.get({:elixir, :eval_env})
+    api = Process.get(:__api__)
+
+    fn arg ->
+      Process.put({:elixir, :eval_env}, env)
+      Process.put(:__api__, api)
+      fun.(arg)
+    end
+  end
+
   defp wrap_safe(fun) when is_function(fun, 0) do
-    fn -> Utils.run_safe(fun) |> unhandled() end
+    fn -> Utils.run_safe(fun) |> log_unhandled() end
   end
 
   defp wrap_safe(fun) when is_function(fun, 1) do
-    fn arg -> Utils.run_safe(fun, arg) |> unhandled() end
+    fn arg -> Utils.run_safe(fun, arg) |> log_unhandled() end
   end
 
-  defp unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
+  defp unwrap_safe({:ok, res}), do: res
+
+  defp unwrap_safe({:error, %{type: :rescue, error: error, stack: stack}}) do
+    reraise error, stack
+  end
+
+  defp unwrap_safe({:error, %{type: :catch, error: error, stack: _stack}}) do
+    throw(error)
+  end
+
+  defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
     debug("UNHANDLED #{type} error #{inspect(error)}")
     trace("UNHANDLED #{type} stack #{inspect(stack)}")
     res
   end
 
-  defp unhandled(res), do: res
+  defp log_unhandled(res), do: res
 end

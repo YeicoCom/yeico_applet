@@ -5,6 +5,7 @@ defmodule AppletRunLogTest do
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "applet run trace" do

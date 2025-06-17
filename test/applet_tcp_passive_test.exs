@@ -1,9 +1,11 @@
 defmodule AppletTcpPassiveTest do
   use ExUnit.Case, async: false
   use Applet.Alias
+  use Applet.Api
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "tcp/passive applet" do

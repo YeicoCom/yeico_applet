@@ -5,6 +5,7 @@ defmodule AppletOnPostTest do
 
   setup do
     Applet.reset!()
+    Adb.reset()
   end
 
   test "on_post applet" do
