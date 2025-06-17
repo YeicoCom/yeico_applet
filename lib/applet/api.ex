@@ -74,7 +74,22 @@ defmodule Applet.Api do
   def name(), do: Path.basename(route(), ".exs")
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
-  def await(task, timeout \\ :infinity), do: call({:await, task, timeout})
+  def await(fun) when is_function(fun, 0), do: await(fun, 100)
+  def await(task = %Task{}), do: call({:await, task, :infinity})
+  def await(task = %Task{}, timeout), do: call({:await, task, timeout})
+
+  def await(fun, poll) when is_function(fun, 0) do
+    Stream.interval(poll)
+    |> Stream.take_while(fn _ ->
+      case Utils.run_safe(fun) do
+        {:ok, true} -> false
+        _ -> true
+      end
+    end)
+    |> Stream.take(-1)
+    |> Enum.to_list()
+    |> is_list()
+  end
 
   def query(), do: Shared.get("applets:query")
   def query(:hostname), do: Utils.hostname()
