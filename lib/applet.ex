@@ -122,8 +122,18 @@ defmodule Applet do
 
       Applet.subscribe!(level, route, nil)
       start!(route, code)
-      config = Server.config()
-      colors = config[:colors]
+
+      colors =
+        Application.get_env(:applet, Applet.Server)[:colors] ||
+          [
+            trace: IO.ANSI.light_black(),
+            debug: IO.ANSI.light_cyan(),
+            info: IO.ANSI.blue(),
+            warn: IO.ANSI.yellow(),
+            error: IO.ANSI.light_red()
+          ]
+
+      colors = Enum.into(colors, %{})
 
       loop = fn loop ->
         receive do
