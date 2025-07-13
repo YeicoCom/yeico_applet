@@ -1,17 +1,19 @@
 defmodule Applet.Api.Tcp do
+  alias Applet.Api.Ip4
+
   def connect(ip, port, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, :infinity)
     line = Keyword.get(opts, :line, false)
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
     opts = [:binary, packet: packet, active: active]
-    ip = if is_binary(ip), do: parse(ip), else: ip
+    ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
 
     with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, timeout) do
       {:ok, {ip, port}} = :inet.sockname(socket)
       {:ok, {pip, pport}} = :inet.peername(socket)
-      peer = %{ip: ips(pip), port: pport}
-      {:ok, %{ip: ips(ip), port: port, socket: socket, peer: peer}}
+      peer = %{ip: Ip4.tos(pip), port: pport}
+      {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket, peer: peer}}
     end
   end
 
@@ -19,12 +21,12 @@ defmodule Applet.Api.Tcp do
     line = Keyword.get(opts, :line, false)
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
-    ip = if is_binary(ip), do: parse(ip), else: ip
+    ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
     opts = [:binary, ip: ip, packet: packet, active: active, reuseaddr: true]
 
     with {:ok, socket} <- :gen_tcp.listen(port, opts) do
       {:ok, {ip, port}} = :inet.sockname(socket)
-      {:ok, %{ip: ips(ip), port: port, socket: socket}}
+      {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket}}
     end
   end
 
@@ -32,8 +34,8 @@ defmodule Applet.Api.Tcp do
     {:ok, client} = :gen_tcp.accept(socket)
     {:ok, {ip, port}} = :inet.sockname(client)
     {:ok, {pip, pport}} = :inet.peername(client)
-    peer = %{ip: ips(pip), port: pport}
-    {:ok, %{ip: ips(ip), port: port, socket: client, peer: peer}}
+    peer = %{ip: Ip4.tos(pip), port: pport}
+    {:ok, %{ip: Ip4.tos(ip), port: port, socket: client, peer: peer}}
   end
 
   def read(%{socket: socket}, timeout \\ :infinity) do
@@ -67,12 +69,5 @@ defmodule Applet.Api.Tcp do
 
   def close(%{socket: socket}) do
     :gen_tcp.close(socket)
-  end
-
-  def ips(ip) when is_binary(ip), do: ip
-  def ips({a, b, c, d}), do: "#{a}.#{b}.#{c}.#{d}"
-
-  defp parse(ip) do
-    :inet.parse_address(~c"#{ip}") |> elem(1)
   end
 end
