@@ -19,6 +19,9 @@ defmodule Applet.Runner do
 
     api =
       fn
+        :entry ->
+          route
+
         :route ->
           route
 

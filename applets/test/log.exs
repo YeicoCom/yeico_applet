@@ -5,3 +5,5 @@ Api.debug("msg")
 Api.info("msg")
 Api.warn("msg")
 Api.error("msg")
+
+:ok

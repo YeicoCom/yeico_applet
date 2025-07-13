@@ -4,10 +4,10 @@ Applet.start()
 defmodule Run do
   def applet(code, tests, opts \\ []) do
     use Applet.Api
-    route = Keyword.get(opts, :route, "applet_test.exs")
-    name = String.trim_trailing(route, ".exs")
     Applet.reset!()
     Adb.reset()
+    route = Keyword.get(opts, :route, "applet_test.exs")
+    name = String.trim_trailing(route, ".exs")
     {:ok, pid} = Applet.start!(route, code)
     tests.(%{pid: pid, route: route, name: name})
     Applet.stop!(route)

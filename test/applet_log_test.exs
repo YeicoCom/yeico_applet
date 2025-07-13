@@ -3,6 +3,41 @@ defmodule AppletLogTest do
   use Applet.Alias
   use Applet.Api
 
+  # check log works from sub applets
+  # since sub applets now have their own route
+  test "trace from evalf" do
+    code = """
+    use Applet.Api
+
+    Api.evalf("test/log.exs")
+    """
+
+    port = Application.get_env(:applet, Server)[:port]
+
+    {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
+    :ok = Tcp.write(client, "trace applet_test.exs\n")
+    assert {:ok, "ok trace applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "TRACE", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      :ok = Tcp.close(client)
+    end)
+  end
+
   test "applet trace" do
     code = """
     use Applet.Api
@@ -26,7 +61,7 @@ defmodule AppletLogTest do
       assert [_, "INFO", "Applet starting applet_test.exs"] =
                String.split(line, " ", parts: 3, trim: true)
 
-      line = Tcp.read(client) |> elem(1) |> String.trim()
+      line = Tcp.read(client) |> elem(1) |> String.trim() |> IO.inspect()
       assert [_, "TRACE", "msg"] = String.split(line, " ", parts: 3, trim: true)
       line = Tcp.read(client) |> elem(1) |> String.trim()
       assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)

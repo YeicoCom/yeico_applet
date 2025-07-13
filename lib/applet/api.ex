@@ -61,6 +61,7 @@ defmodule Applet.Api do
   alias Applet.Api.Bus
 
   def route(), do: call(:route)
+  def entry(), do: call(:entry)
   def path(), do: Applet.path()
   def load!(route), do: Applet.load!(route)
   def trace(msg), do: log(:trace, msg)
@@ -213,10 +214,11 @@ defmodule Applet.Api do
     {result, binding |> Enum.into(%{})}
   end
 
+  # log with entry route
   defp log(type, msg) when is_binary(msg) do
-    route = route()
-    Bus.broadcast!(:logger, {route, type, msg})
-    Bus.broadcast!({:logger, route, type}, msg)
+    entry = entry()
+    Bus.broadcast!(:logger, {entry, type, msg})
+    Bus.broadcast!({:logger, entry, type}, msg)
     # for |> Api.trace()
     msg
   end
