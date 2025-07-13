@@ -22,9 +22,9 @@ defmodule AppletEvironTest do
     path = "#{home}/yeico_applet/applets"
 
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert "environ" == Adb.get(:name) end)
-    Utils.wait_success(20, 20, fn -> assert "environ.exs" == Adb.get(:file) end)
-    Utils.wait_success(20, 20, fn -> assert path == Adb.get(:path) end)
+    Wait.success(fn -> assert "environ" == Adb.get(:name) end)
+    Wait.success(fn -> assert "environ.exs" == Adb.get(:file) end)
+    Wait.success(fn -> assert path == Adb.get(:path) end)
     Applet.stop!(route)
   end
 end

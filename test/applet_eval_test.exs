@@ -18,9 +18,9 @@ defmodule AppletEvalTest do
     """
 
     {:ok, pid} = Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
+    Wait.success(fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {{:subscript, %{}}, %{}}}] = Unique.lookup({:applet, route})
     end)
 

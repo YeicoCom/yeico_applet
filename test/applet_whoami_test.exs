@@ -20,7 +20,7 @@ defmodule AppletWhoamiTest do
 
     path = "#{File.cwd!()}/applets"
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {{^path, "_dir/_name.exs", "_name", "_name.exs"}, %{}}}] =
                Unique.lookup({:applet, route})
     end)

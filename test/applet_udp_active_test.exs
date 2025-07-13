@@ -49,7 +49,7 @@ defmodule AppletUdpActiveTest do
 
     {:ok, pid} = Applet.start!(route, code)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
     end)
 

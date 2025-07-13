@@ -22,11 +22,11 @@ defmodule AppletAdbTest do
     """
 
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert "a" == Adb.get(:a) end)
-    Utils.wait_success(20, 20, fn -> assert %{a: "a"} == Adb.get(:b) end)
-    Utils.wait_success(20, 20, fn -> assert "c" == Adb.get(:c) end)
-    Utils.wait_success(20, 20, fn -> assert "d" == Adb.get(:d) end)
-    Utils.wait_success(20, 20, fn -> assert "E" == Adb.get(:e) end)
+    Wait.success(fn -> assert "a" == Adb.get(:a) end)
+    Wait.success(fn -> assert %{a: "a"} == Adb.get(:b) end)
+    Wait.success(fn -> assert "c" == Adb.get(:c) end)
+    Wait.success(fn -> assert "d" == Adb.get(:d) end)
+    Wait.success(fn -> assert "E" == Adb.get(:e) end)
     Adb.reset()
     assert %{} == Adb.get()
     Applet.stop!(route)

@@ -21,7 +21,7 @@ defmodule AppletServerTest do
     assert {:ok, ">test/test.exs\n"} = Tcp.read(client)
     assert {:ok, "ok list stored\n"} = Tcp.read(client)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{_, "test/test.exs"}] = Multiple.lookup(:applet)
     end)
 
@@ -43,7 +43,7 @@ defmodule AppletServerTest do
     assert {:ok, ">test.exs\n"} = Tcp.read(client)
     assert {:ok, "ok list stored\n"} = Tcp.read(client)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{_, "test.exs"}] = Multiple.lookup(:applet)
     end)
 
@@ -63,7 +63,7 @@ defmodule AppletServerTest do
     assert {:ok, "ok reboot\n"} = Tcp.read(client)
     :ok = Tcp.close(client)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert 2 = Multiple.lookup(:applet) |> length()
     end)
   end
@@ -78,7 +78,7 @@ defmodule AppletServerTest do
     assert {:ok, "ok restart\n"} = Tcp.read(client)
     :ok = Tcp.close(client)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       with [{pid2, _}] <- Multiple.lookup(:applet) do
         refute pid1 == pid2
       else
@@ -86,7 +86,7 @@ defmodule AppletServerTest do
       end
     end)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert 1 = Multiple.lookup(:applet) |> length()
     end)
   end

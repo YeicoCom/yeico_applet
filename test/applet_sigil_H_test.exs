@@ -26,7 +26,7 @@ defmodule AppletSigilHTest do
 
     {:ok, pid} = Applet.start!(route, code)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {%Phoenix.LiveView.Rendered{}, %{}}}] =
                Unique.lookup({:applet, route})
     end)

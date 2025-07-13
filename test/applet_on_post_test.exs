@@ -31,11 +31,11 @@ defmodule AppletOnPostTest do
 
     {:ok, pid} = Applet.start!(route, code)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
     end)
 
-    Utils.wait_success(20, 20, fn -> assert 6 = Adb.get(:topic) end)
+    Wait.success(fn -> assert 6 = Adb.get(:topic) end)
 
     Applet.stop!(route)
   end

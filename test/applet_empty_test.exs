@@ -13,9 +13,9 @@ defmodule AppletEmptyTest do
     code = ""
 
     {:ok, pid} = Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
+    Wait.success(fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
 
-    Utils.wait_success(20, 20, fn ->
+    Wait.success(fn ->
       assert [{^pid, {nil, %{}}}] = Unique.lookup({:applet, route})
     end)
 

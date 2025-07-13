@@ -23,9 +23,9 @@ defmodule AppletWrapTest do
 
     Applet.subscribe!(:trace, "wrap", nil)
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-    Utils.wait_success(20, 20, fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-    Utils.wait_success(20, 20, fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
+    Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
+    Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
+    Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
     assert_receive {{:logger, "wrap", :info}, nil, msg}
     assert msg == "Applet starting wrap"
     assert_receive {{:logger, "wrap", :debug}, nil, msg}
@@ -54,9 +54,9 @@ defmodule AppletWrapTest do
 
     Applet.subscribe!(:trace, "wrap", nil)
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-    Utils.wait_success(20, 20, fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-    Utils.wait_success(20, 20, fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
+    Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
+    Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
+    Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
     assert_receive {{:logger, "wrap", :info}, nil, msg}
     assert msg == "Applet starting wrap"
     assert_receive {{:logger, "wrap", :debug}, nil, msg}

@@ -29,7 +29,7 @@ defmodule AppletAsyncBusTest do
     """
 
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert [{_, ^route}] = Unique.lookup(:test) end)
+    Wait.success(fn -> assert [{_, ^route}] = Unique.lookup(:test) end)
     Applet.stop!(route)
   end
 end

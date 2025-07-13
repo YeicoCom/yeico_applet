@@ -21,7 +21,7 @@ defmodule AppletDeferTest do
     """
 
     Applet.start!(route, code)
-    Utils.wait_success(20, 20, fn -> assert 1 = Adb.get(:defer) end)
+    Wait.success(fn -> assert 1 = Adb.get(:defer) end)
     Applet.stop!(route)
   end
 end
