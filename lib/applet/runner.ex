@@ -2,12 +2,12 @@ defmodule Applet.Runner do
   use Applet.Alias
   use Applet.Api
 
-  def start_link(route, code) do
-    state = %{route: route, code: code}
+  def start_link(route, code, argv) do
+    state = %{route: route, code: code, argv: argv}
     {:ok, spawn_link(fn -> init(state) end)}
   end
 
-  defp init(%{route: route, code: code}) do
+  defp init(%{route: route, code: code, argv: argv}) do
     :ok = Applet.stop!(route)
     Unique.register!({:applet, route}, nil)
     Multiple.register!(:applet, route)
@@ -40,7 +40,7 @@ defmodule Applet.Runner do
     end
 
     Api.info("Applet starting #{route}")
-    {result, binding} = Api.evals(route, code)
+    {result, binding} = Api.evals(route, code, argv: argv)
     Unique.update!({:applet, route}, {result, binding})
     :timer.sleep(:infinity)
   end

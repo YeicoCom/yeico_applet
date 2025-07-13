@@ -48,9 +48,10 @@ defmodule Applet do
   # functions only to avoid poluting module space
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
-  def start!(route, code \\ nil) do
+  def start!(route, code, opts \\ []) do
+    argv = Keyword.get(opts, :argv, [])
     code = if code, do: code, else: load!(route)
-    start = {Runner, :start_link, [route, code]}
+    start = {Runner, :start_link, [route, code, argv]}
     # temporary never restarted
     # dynamic supervisor requires but ignores id
     spec = %{id: route, start: start, restart: :temporary}
@@ -77,13 +78,13 @@ defmodule Applet do
     list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
     list = stored()
-    list |> Enum.each(fn route -> start!(route) end)
+    list |> Enum.each(fn route -> start!(route, nil) end)
   end
 
   def restart!() do
     list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
-    list |> Enum.each(fn {_, route} -> start!(route) end)
+    list |> Enum.each(fn {_, route} -> start!(route, nil) end)
   end
 
   def reset!() do
@@ -107,7 +108,9 @@ defmodule Applet do
   # Applet.run!("tryout/tryout.exs")
   # runs ${PWD}/applets/tryout/tryout.exs
   # type INTRO to stop logging
-  def run!(route, level \\ :trace) do
+  def run!(route, opts \\ []) do
+    level = Keyword.get(opts, :level, :trace)
+    argv = Keyword.get(opts, :argv, [])
     code = Applet.load!(route)
 
     # Use Task because Tasks points to a different stdin
@@ -121,7 +124,7 @@ defmodule Applet do
       end)
 
       Applet.subscribe!(level, route, nil)
-      start!(route, code)
+      start!(route, code, argv: argv)
 
       colors =
         Application.get_env(:applet, Applet.Server)[:colors] ||
