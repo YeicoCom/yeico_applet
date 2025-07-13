@@ -3,14 +3,7 @@ defmodule AppletSigilHTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "sigil_H applet" do
-    route = "sigil_H"
-
     code = """
     use Applet.Api
     use Applet.Api.Live
@@ -24,13 +17,11 @@ defmodule AppletSigilHTest do
     render.(%{count: 1})
     """
 
-    {:ok, pid} = Applet.start!(route, code)
-
-    Wait.success(fn ->
-      assert [{^pid, {%Phoenix.LiveView.Rendered{}, %{}}}] =
-               Unique.lookup({:applet, route})
+    Run.applet(code, fn %{pid: pid, route: route} ->
+      Wait.success(fn ->
+        assert [{^pid, {%Phoenix.LiveView.Rendered{}, %{}}}] =
+                 Unique.lookup({:applet, route})
+      end)
     end)
-
-    Applet.stop!(route)
   end
 end

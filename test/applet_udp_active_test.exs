@@ -3,14 +3,7 @@ defmodule AppletUdpActiveTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "udp/active applet" do
-    route = "udp/active"
-
     code = """
     use Applet.Api
 
@@ -47,12 +40,10 @@ defmodule AppletUdpActiveTest do
     :ok = Udp.close(client)
     """
 
-    {:ok, pid} = Applet.start!(route, code)
-
-    Wait.success(fn ->
-      assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
+    Run.applet(code, fn %{pid: pid, route: route} ->
+      Wait.success(fn ->
+        assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
+      end)
     end)
-
-    Applet.stop!(route)
   end
 end

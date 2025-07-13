@@ -3,14 +3,7 @@ defmodule AppletLogTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "applet trace" do
-    route = "trace"
-
     code = """
     use Applet.Api
 
@@ -24,27 +17,30 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "trace trace\n")
-    assert {:ok, "ok trace trace\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(route, code)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "Applet starting trace"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "TRACE", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    :ok = Tcp.close(client)
+    :ok = Tcp.write(client, "trace applet_test.exs\n")
+    assert {:ok, "ok trace applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "TRACE", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      :ok = Tcp.close(client)
+    end)
   end
 
   test "applet debug" do
-    route = "debug"
-
     code = """
     use Applet.Api
 
@@ -58,25 +54,28 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "debug debug\n")
-    assert {:ok, "ok debug debug\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(route, code)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "Applet starting debug"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    :ok = Tcp.close(client)
+    :ok = Tcp.write(client, "debug applet_test.exs\n")
+    assert {:ok, "ok debug applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "DEBUG", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      :ok = Tcp.close(client)
+    end)
   end
 
   test "applet info" do
-    route = "info"
-
     code = """
     use Applet.Api
 
@@ -90,23 +89,26 @@ defmodule AppletLogTest do
     port = Application.get_env(:applet, Server)[:port]
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
-    :ok = Tcp.write(client, "info info\n")
-    assert {:ok, "ok info info\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(route, code)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "Applet starting info"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    :ok = Tcp.close(client)
+    :ok = Tcp.write(client, "info applet_test.exs\n")
+    assert {:ok, "ok info applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "WARN", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      :ok = Tcp.close(client)
+    end)
   end
 
   test "applet localtime" do
-    route = "localtime"
-
     code = """
     use Applet.Api
 
@@ -121,22 +123,22 @@ defmodule AppletLogTest do
     assert {:ok, "ok localtime 2000-01-01 00:00:00\n"} = Tcp.read(client)
     :ok = Tcp.write(client, "localtime 2000-01-01T00:00:00\n")
     assert {:ok, "ok localtime 2000-01-01T00:00:00\n"} = Tcp.read(client)
-    :ok = Tcp.write(client, "info localtime\n")
-    assert {:ok, "ok info localtime\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(route, code)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
+    :ok = Tcp.write(client, "info applet_test.exs\n")
+    assert {:ok, "ok info applet_test.exs\n"} = Tcp.read(client)
 
-    assert ["2000" <> _, "INFO", "Applet starting localtime"] =
-             String.split(line, " ", parts: 3, trim: true)
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert ["2000" <> _, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
-    :ok = Tcp.close(client)
+      assert ["2000" <> _, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert ["2000" <> _, "ERROR", "msg"] = String.split(line, " ", parts: 3, trim: true)
+      :ok = Tcp.close(client)
+    end)
   end
 
   test "applet ansicolor" do
-    route = "ansicolor"
-
     code = """
     use Applet.Api
 
@@ -152,34 +154,42 @@ defmodule AppletLogTest do
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "ansicolor true\n")
     assert {:ok, "ok ansicolor true\n"} = Tcp.read(client)
-    :ok = Tcp.write(client, "trace ansicolor\n")
-    assert {:ok, "ok trace ansicolor\n"} = Tcp.read(client)
-    {:ok, _pid} = Applet.start!(route, code)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
+    :ok = Tcp.write(client, "trace applet_test.exs\n")
+    assert {:ok, "ok trace applet_test.exs\n"} = Tcp.read(client)
 
-    trace = IO.ANSI.light_black()
-    debug = IO.ANSI.light_cyan()
-    info = IO.ANSI.blue()
-    warn = IO.ANSI.yellow()
-    error = IO.ANSI.light_red()
-    reset = IO.ANSI.reset()
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    assert [^info <> _, "INFO", "Applet starting ansicolor" <> ^reset] =
-             String.split(line, " ", parts: 3, trim: true)
+      trace = IO.ANSI.light_black()
+      debug = IO.ANSI.light_cyan()
+      info = IO.ANSI.blue()
+      warn = IO.ANSI.yellow()
+      error = IO.ANSI.light_red()
+      reset = IO.ANSI.reset()
 
-    line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [^info <> _, "INFO", "Applet starting applet_test.exs" <> ^reset] =
+               String.split(line, " ", parts: 3, trim: true)
 
-    assert [^trace <> _, "TRACE", "msg" <> ^reset] =
-             String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [^debug <> _, "DEBUG", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [^info <> _, "INFO", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [^warn <> _, "WARN", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
-    line = Tcp.read(client) |> elem(1) |> String.trim()
-    assert [^error <> _, "ERROR", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
-    :ok = Tcp.close(client)
+      assert [^trace <> _, "TRACE", "msg" <> ^reset] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [^debug <> _, "DEBUG", "msg" <> ^reset] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [^info <> _, "INFO", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [^warn <> _, "WARN", "msg" <> ^reset] = String.split(line, " ", parts: 3, trim: true)
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+
+      assert [^error <> _, "ERROR", "msg" <> ^reset] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      :ok = Tcp.close(client)
+    end)
   end
 end

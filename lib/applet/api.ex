@@ -72,6 +72,7 @@ defmodule Applet.Api do
   def pid(%Task{pid: pid}), do: pid
   def file(), do: Path.basename(route())
   def name(), do: Path.basename(route(), ".exs")
+  def relative(route), do: Path.join(Path.dirname(route()), route)
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
@@ -172,10 +173,21 @@ defmodule Applet.Api do
   def evals(route, code, binding \\ []) do
     {{result, binding}, diagnostics} =
       Code.with_diagnostics(fn ->
+        api = Process.get(:__api__)
+
+        unless route == route() do
+          Process.put(:__api__, fn
+            :route -> route
+            other -> api.(other)
+          end)
+        end
+
         try do
           Code.eval_string(code, binding, file: route)
         rescue
           error -> {{error, __STACKTRACE__}, []}
+        after
+          Process.put(:__api__, api)
         end
       end)
 

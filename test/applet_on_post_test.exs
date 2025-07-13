@@ -3,14 +3,7 @@ defmodule AppletOnPostTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "on_post applet" do
-    route = "on_post"
-
     code = """
     use Applet.Api
 
@@ -18,25 +11,18 @@ defmodule AppletOnPostTest do
       Adb.update(:topic, 0, fn c -> c + v end)
       case v do
         0 -> throw :stone
-        _ -> raise "child"
+        1 -> raise "child"
+        _ -> :ok
       end
     end)
     Api.post(:topic, 0)
     Api.post(:topic, 1)
     Api.post(:topic, 2)
     Api.post(:topic, 3)
-
-    :ok
     """
 
-    {:ok, pid} = Applet.start!(route, code)
-
-    Wait.success(fn ->
-      assert [{^pid, {:ok, %{}}}] = Unique.lookup({:applet, route})
+    Run.applet(code, fn _ ->
+      Wait.success(fn -> assert 6 == Adb.get(:topic) end)
     end)
-
-    Wait.success(fn -> assert 6 = Adb.get(:topic) end)
-
-    Applet.stop!(route)
   end
 end

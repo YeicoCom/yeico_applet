@@ -3,22 +3,13 @@ defmodule AppletEmptyTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "empty applet" do
-    route = "empty"
-    code = ""
+    Run.applet("", fn %{pid: pid, route: route} ->
+      Wait.success(fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
 
-    {:ok, pid} = Applet.start!(route, code)
-    Wait.success(fn -> assert [{^pid, ^route}] = Multiple.lookup(:applet) end)
-
-    Wait.success(fn ->
-      assert [{^pid, {nil, %{}}}] = Unique.lookup({:applet, route})
+      Wait.success(fn ->
+        assert [{^pid, {nil, %{}}}] = Unique.lookup({:applet, route})
+      end)
     end)
-
-    Applet.stop!(route)
   end
 end

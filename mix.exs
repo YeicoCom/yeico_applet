@@ -23,8 +23,7 @@ defmodule Applet.MixProject do
   defp deps do
     [
       {:dns, "~> 2.4.0"},
-      {:phoenix_live_view, "~> 1.0"},
-      {:modbus, github: "samuelventura/modbus", only: :test}
+      {:phoenix_live_view, "~> 1.0"}
     ]
   end
 end

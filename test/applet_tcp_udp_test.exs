@@ -3,11 +3,6 @@ defmodule AppletTcpUdpTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "tcp listen and connect error" do
     {:ok, socket} = Tcp.listen("127.0.0.1", 0)
     {:error, _} = Tcp.listen("127.0.0.1", socket.port)

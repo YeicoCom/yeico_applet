@@ -3,14 +3,7 @@ defmodule AppletWrapTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "wrap fun/0" do
-    route = "wrap"
-
     code = """
     use Applet.Api
     wrap1 = Api.wrap(fn -> raise "RAISE" end)
@@ -21,27 +14,26 @@ defmodule AppletWrapTest do
     Adb.put(:wrap3, Api.safe(wrap3))
     """
 
-    Applet.subscribe!(:trace, "wrap", nil)
-    Applet.start!(route, code)
-    Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-    Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-    Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
-    assert_receive {{:logger, "wrap", :info}, nil, msg}
-    assert msg == "Applet starting wrap"
-    assert_receive {{:logger, "wrap", :debug}, nil, msg}
-    assert msg =~ "UNHANDLED rescue error %RuntimeError"
-    assert_receive {{:logger, "wrap", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
-    assert_receive {{:logger, "wrap", :debug}, nil, msg}
-    assert msg =~ "UNHANDLED catch error"
-    assert_receive {{:logger, "wrap", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED catch stack"
-    Applet.stop!(route)
+    Applet.subscribe!(:trace, "applet_test.exs", nil)
+
+    Run.applet(code, fn %{route: route} ->
+      Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
+      Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
+      Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
+      assert_receive {{:logger, ^route, :info}, nil, msg}
+      assert msg == "Applet starting applet_test.exs"
+      assert_receive {{:logger, ^route, :debug}, nil, msg}
+      assert msg =~ "UNHANDLED rescue error %RuntimeError"
+      assert_receive {{:logger, ^route, :trace}, nil, msg}
+      assert msg =~ "UNHANDLED rescue stack"
+      assert_receive {{:logger, ^route, :debug}, nil, msg}
+      assert msg =~ "UNHANDLED catch error"
+      assert_receive {{:logger, ^route, :trace}, nil, msg}
+      assert msg =~ "UNHANDLED catch stack"
+    end)
   end
 
   test "wrap fun/1" do
-    route = "wrap"
-
     code = """
     use Applet.Api
     wrap1 = Api.wrap(fn arg -> raise arg end)
@@ -52,21 +44,22 @@ defmodule AppletWrapTest do
     Adb.put(:wrap3, Api.safe(wrap3, "OK"))
     """
 
-    Applet.subscribe!(:trace, "wrap", nil)
-    Applet.start!(route, code)
-    Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-    Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-    Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
-    assert_receive {{:logger, "wrap", :info}, nil, msg}
-    assert msg == "Applet starting wrap"
-    assert_receive {{:logger, "wrap", :debug}, nil, msg}
-    assert msg =~ "UNHANDLED rescue error %RuntimeError"
-    assert_receive {{:logger, "wrap", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED rescue stack"
-    assert_receive {{:logger, "wrap", :debug}, nil, msg}
-    assert msg =~ "UNHANDLED catch error"
-    assert_receive {{:logger, "wrap", :trace}, nil, msg}
-    assert msg =~ "UNHANDLED catch stack"
-    Applet.stop!(route)
+    Applet.subscribe!(:trace, "applet_test.exs", nil)
+
+    Run.applet(code, fn %{route: route} ->
+      Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
+      Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
+      Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
+      assert_receive {{:logger, ^route, :info}, nil, msg}
+      assert msg == "Applet starting applet_test.exs"
+      assert_receive {{:logger, ^route, :debug}, nil, msg}
+      assert msg =~ "UNHANDLED rescue error %RuntimeError"
+      assert_receive {{:logger, ^route, :trace}, nil, msg}
+      assert msg =~ "UNHANDLED rescue stack"
+      assert_receive {{:logger, ^route, :debug}, nil, msg}
+      assert msg =~ "UNHANDLED catch error"
+      assert_receive {{:logger, ^route, :trace}, nil, msg}
+      assert msg =~ "UNHANDLED catch stack"
+    end)
   end
 end

@@ -3,14 +3,7 @@ defmodule AppletAdbTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "adb" do
-    route = "adb.exs"
-
     code = """
     use Applet.Api
     Adb.put(:a, "a")
@@ -21,14 +14,14 @@ defmodule AppletAdbTest do
     Adb.update(:e, "e", fn _ -> "E" end)
     """
 
-    Applet.start!(route, code)
-    Wait.success(fn -> assert "a" == Adb.get(:a) end)
-    Wait.success(fn -> assert %{a: "a"} == Adb.get(:b) end)
-    Wait.success(fn -> assert "c" == Adb.get(:c) end)
-    Wait.success(fn -> assert "d" == Adb.get(:d) end)
-    Wait.success(fn -> assert "E" == Adb.get(:e) end)
-    Adb.reset()
-    assert %{} == Adb.get()
-    Applet.stop!(route)
+    Run.applet(code, fn _ ->
+      Wait.success(fn -> assert "a" == Adb.get(:a) end)
+      Wait.success(fn -> assert %{a: "a"} == Adb.get(:b) end)
+      Wait.success(fn -> assert "c" == Adb.get(:c) end)
+      Wait.success(fn -> assert "d" == Adb.get(:d) end)
+      Wait.success(fn -> assert "E" == Adb.get(:e) end)
+      Adb.reset()
+      assert %{} == Adb.get()
+    end)
   end
 end

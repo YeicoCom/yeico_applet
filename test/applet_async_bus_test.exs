@@ -3,33 +3,18 @@ defmodule AppletAsyncBusTest do
   use Applet.Alias
   use Applet.Api
 
-  setup do
-    Applet.reset!()
-    Adb.reset()
-  end
-
   test "async/bus applet" do
-    route = "async/bus"
-
     code = """
     use Applet.Api
-
-    Api.async(fn ->
-      Bus.subscribe!(:event, :sargs)
-      Api.async(fn ->
-        Bus.broadcast!(:event, :bargs)
-        Api.sleep()
-      end)
-      receive do
-        {:event, :sargs, :bargs} -> :ok
-      end
-    end) |> Api.await()
-
-    Applet.Unique.register!(:test, \"#{route}\")
+    Bus.subscribe!(:event, :sargs)
+    Api.async(fn -> Bus.broadcast!(:event, :bargs) end)
+    receive do
+      {:event, :sargs, :bargs} -> Adb.put(:done, true)
+    end
     """
 
-    Applet.start!(route, code)
-    Wait.success(fn -> assert [{_, ^route}] = Unique.lookup(:test) end)
-    Applet.stop!(route)
+    Run.applet(code, fn _ ->
+      Wait.success(fn -> assert true == Adb.get(:done) end)
+    end)
   end
 end
