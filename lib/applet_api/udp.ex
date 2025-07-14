@@ -26,8 +26,8 @@ defmodule Applet.Api.Udp do
     end
   end
 
-  def read(%{socket: socket}, timeout \\ :infinity) do
-    case :gen_udp.recv(socket, 0, timeout) do
+  def read(%{socket: socket}, toms \\ :infinity) do
+    case :gen_udp.recv(socket, 0, toms) do
       {:ok, {ip, port, data}} -> {:ok, {ip, port, data}}
       {:error, reason} -> {:error, reason}
     end

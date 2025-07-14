@@ -2,14 +2,14 @@ defmodule Applet.Api.Tcp do
   alias Applet.Api.Ip4
 
   def connect(ip, port, opts \\ []) do
-    timeout = Keyword.get(opts, :timeout, :infinity)
+    toms = Keyword.get(opts, :toms, :infinity)
     line = Keyword.get(opts, :line, false)
     active = Keyword.get(opts, :active, false)
     packet = if line, do: :line, else: :raw
     opts = [:binary, packet: packet, active: active]
     ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
 
-    with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, timeout) do
+    with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, toms) do
       {:ok, {ip, port}} = :inet.sockname(socket)
       {:ok, {pip, pport}} = :inet.peername(socket)
       peer = %{ip: Ip4.tos(pip), port: pport}
@@ -38,8 +38,8 @@ defmodule Applet.Api.Tcp do
     {:ok, %{ip: Ip4.tos(ip), port: port, socket: client, peer: peer}}
   end
 
-  def read(%{socket: socket}, timeout \\ :infinity) do
-    case :gen_tcp.recv(socket, 0, timeout) do
+  def read(%{socket: socket}, toms \\ :infinity) do
+    case :gen_tcp.recv(socket, 0, toms) do
       {:ok, data} -> {:ok, data}
       {:error, reason} -> {:error, reason}
     end

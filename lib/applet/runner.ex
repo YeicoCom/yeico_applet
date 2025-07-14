@@ -25,8 +25,8 @@ defmodule Applet.Runner do
         :route ->
           route
 
-        {:await, task, timeout} ->
-          Task.await(task, timeout)
+        {:await, task, toms} ->
+          Task.await(task, toms)
 
         {:async, fun} ->
           Task.Supervisor.async(tasks, fn ->

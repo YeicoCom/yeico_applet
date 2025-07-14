@@ -80,7 +80,7 @@ defmodule Applet.Api do
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
   def await(task = %Task{}), do: call({:await, task, :infinity})
-  def await(task = %Task{}, timeout), do: call({:await, task, timeout})
+  def await(task = %Task{}, toms), do: call({:await, task, toms})
 
   def await(fun, poll) when is_function(fun, 0) do
     Stream.interval(poll)
