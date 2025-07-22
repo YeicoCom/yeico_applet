@@ -96,7 +96,6 @@ defmodule Applet.Api do
   end
 
   def query(), do: Shared.get("applets:query")
-  def query(:hostname), do: Utils.hostname()
   def query(query), do: query().(query, [])
   def query(query, opts), do: query().(query, opts)
   def hook(hook), do: Shared.get("applets:hook:#{hook}")
