@@ -106,6 +106,11 @@ defmodule Applet.Api do
     call({:async, wrap_async(safe)})
   end
 
+  def async(fun, arg) when is_function(fun, 1) do
+    safe = wrap_safe(fn -> fun.(arg) end)
+    call({:async, wrap_async(safe)})
+  end
+
   def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0) do
     safe1 = wrap_safe(fun1)
     safe2 = wrap_safe(fun2)
