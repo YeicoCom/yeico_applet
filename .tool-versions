@@ -1,10 +1,8 @@
 # >=OTP-27.3.3
 # >=OTP-26.2.5.11
 # >=OTP-25.3.2.20
-# for cloud development
-# erlang 27.3.3
-# elixir 1.18.3-otp-27
-# for terminal sdk development
-# SDK:Elixir-1.17.1/OTP-27.3.3/erts-15.2.6
-erlang 27.3.3
+# mickledore elixir-1.15.2/OTP-26.0.2/erts-14.0.2
+# scarthgap elixir-1.17.1/OTP-27.3.3/erts-15.2.6
+# central erlang-27.3.3/elixir-1.18.3-otp-27
 elixir 1.17.1-otp-27
+erlang 27.3.3

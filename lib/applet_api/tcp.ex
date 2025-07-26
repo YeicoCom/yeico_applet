@@ -1,6 +1,7 @@
 defmodule Applet.Api.Tcp do
   alias Applet.Api.Ip4
 
+  # sockname and peername fail on closed socket
   def connect(ip, port, opts \\ []) do
     toms = Keyword.get(opts, :toms, :infinity)
     line = Keyword.get(opts, :line, false)
@@ -9,9 +10,9 @@ defmodule Applet.Api.Tcp do
     opts = [:binary, packet: packet, active: active]
     ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
 
-    with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, toms) do
-      {:ok, {ip, port}} = :inet.sockname(socket)
-      {:ok, {pip, pport}} = :inet.peername(socket)
+    with {:ok, socket} <- :gen_tcp.connect(ip, port, opts, toms),
+         {:ok, {ip, port}} <- :inet.sockname(socket),
+         {:ok, {pip, pport}} <- :inet.peername(socket) do
       peer = %{ip: Ip4.tos(pip), port: pport}
       {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket, peer: peer}}
     end
@@ -24,18 +25,19 @@ defmodule Applet.Api.Tcp do
     ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
     opts = [:binary, ip: ip, packet: packet, active: active, reuseaddr: true]
 
-    with {:ok, socket} <- :gen_tcp.listen(port, opts) do
-      {:ok, {ip, port}} = :inet.sockname(socket)
+    with {:ok, socket} <- :gen_tcp.listen(port, opts),
+         {:ok, {ip, port}} <- :inet.sockname(socket) do
       {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket}}
     end
   end
 
   def accept(%{socket: socket}) do
-    {:ok, client} = :gen_tcp.accept(socket)
-    {:ok, {ip, port}} = :inet.sockname(client)
-    {:ok, {pip, pport}} = :inet.peername(client)
-    peer = %{ip: Ip4.tos(pip), port: pport}
-    {:ok, %{ip: Ip4.tos(ip), port: port, socket: client, peer: peer}}
+    with {:ok, client} <- :gen_tcp.accept(socket),
+         {:ok, {ip, port}} <- :inet.sockname(client),
+         {:ok, {pip, pport}} <- :inet.peername(client) do
+      peer = %{ip: Ip4.tos(pip), port: pport}
+      {:ok, %{ip: Ip4.tos(ip), port: port, socket: client, peer: peer}}
+    end
   end
 
   def read(%{socket: socket}, toms \\ :infinity) do

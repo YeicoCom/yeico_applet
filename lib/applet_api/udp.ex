@@ -1,15 +1,16 @@
 defmodule Applet.Api.Udp do
   alias Applet.Api.Ip4
 
+  # sockname and peername fail on closed socket
   def connect(ip, port, opts \\ []) do
+    ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
     active = Keyword.get(opts, :active, false)
     opts = [:binary, active: active]
 
-    with {:ok, socket} <- :gen_udp.open(0, opts) do
-      ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
-      :ok = :gen_udp.connect(socket, ip, port)
-      {:ok, {ip, port}} = :inet.sockname(socket)
-      {:ok, {pip, pport}} = :inet.peername(socket)
+    with {:ok, socket} <- :gen_udp.open(0, opts),
+         :ok <- :gen_udp.connect(socket, ip, port),
+         {:ok, {ip, port}} <- :inet.sockname(socket),
+         {:ok, {pip, pport}} <- :inet.peername(socket) do
       peer = %{ip: Ip4.tos(pip), port: pport}
       {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket, peer: peer}}
     end
@@ -20,8 +21,8 @@ defmodule Applet.Api.Udp do
     ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
     opts = [:binary, ip: ip, active: active]
 
-    with {:ok, socket} <- :gen_udp.open(port, opts) do
-      {:ok, {ip, port}} = :inet.sockname(socket)
+    with {:ok, socket} <- :gen_udp.open(port, opts),
+         {:ok, {ip, port}} <- :inet.sockname(socket) do
       {:ok, %{ip: Ip4.tos(ip), port: port, socket: socket}}
     end
   end
