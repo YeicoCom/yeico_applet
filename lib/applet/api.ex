@@ -276,10 +276,13 @@ defmodule Applet.Api do
     throw(error)
   end
 
-  defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
+  defp log_unhandled(res1 = {:error, res2 = %{type: type, error: error, stack: stack}}) do
+    entry = entry()
     debug("UNHANDLED #{type} error #{inspect(error)}")
     trace("UNHANDLED #{type} stack #{inspect(stack)}")
-    res
+    Bus.broadcast!(:unhandled, {entry, res2})
+    Bus.broadcast!({:unhandled, entry}, res2)
+    res1
   end
 
   defp log_unhandled(res), do: res
