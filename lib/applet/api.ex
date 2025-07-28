@@ -75,7 +75,7 @@ defmodule Applet.Api do
   def file(), do: Path.basename(route())
   def name(), do: Path.basename(route(), ".exs")
   def append(path, content), do: File.write!(path, content, [:append])
-  def hostname(), do: :inet.gethostname() |> elem(1) |> to_string()
+  def hostname(), do: Utils.hostname()
   def relative(route), do: Path.join(Path.dirname(route()), route)
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)

@@ -4,7 +4,7 @@ defmodule Applet.Multiple do
   end
 
   def register!(key, value) do
-    {:ok, _} = Registry.register(__MODULE__, key, value)
+    {:ok, _pid} = Registry.register(__MODULE__, key, value)
   end
 
   def lookup(key) do

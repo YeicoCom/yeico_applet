@@ -31,6 +31,11 @@ Applet.run!("tryout/tryout.exs")
 ## Roadmap
 
 - [ ] Thorough testing
+- [ ] Module de-clutter and cleanup
+- [ ] Fully disk based multi-file applets
+  - Currently only entry file gets persisted
+- [ ] Configurable applets parent folder
+- [x] Shorted database names
 - [x] run and trace from server
 - [x] reboot, restart, and clean tasks
 - [x] run! with log: <level> opts

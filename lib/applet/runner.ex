@@ -11,8 +11,6 @@ defmodule Applet.Runner do
     :ok = Applet.stop!(route)
     Unique.register!({:applet, route}, nil)
     Multiple.register!(:applet, route)
-    Pubsub.broadcast!(:applet, {route, :init})
-    Utils.defer(fn -> Pubsub.broadcast!(:applet, {route, :exit}) end)
     start = {Task.Supervisor, :start_link, []}
     spec = %{id: {route, :tasks}, start: start, restart: :temporary}
     {:ok, tasks} = Dynamic.start_child(spec)

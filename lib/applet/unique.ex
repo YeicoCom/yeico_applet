@@ -4,11 +4,11 @@ defmodule Applet.Unique do
   end
 
   def register!(key, value) do
-    {:ok, _} = Registry.register(__MODULE__, key, value)
+    {:ok, _pid} = Registry.register(__MODULE__, key, value)
   end
 
   def update!(key, value) do
-    {^value, _} = Registry.update_value(__MODULE__, key, fn _ -> value end)
+    {^value, _previous} = Registry.update_value(__MODULE__, key, fn _previous -> value end)
   end
 
   def lookup(key) do

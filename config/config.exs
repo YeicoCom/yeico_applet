@@ -1,7 +1,7 @@
 import Config
 
-config :applet, Applet.Store, table: "db_applet_store.dets"
-config :applet, Applet.Api.Ddb, table: "db_applet_api.dets"
+config :applet, Applet.Store, table: "store.dets"
+config :applet, Applet.Api.Ddb, table: "api.dets"
 
 # see exs/colors.exs
 config :applet, Applet.Server,
