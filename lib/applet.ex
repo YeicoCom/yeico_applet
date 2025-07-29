@@ -124,20 +124,10 @@ defmodule Applet do
         send(pid, {:stdin, :line, line})
       end)
 
-      Applet.subscribe!(level, route, nil)
+      subscribe!(level, route)
       start!(route, code, argv: argv)
 
-      colors =
-        Application.get_env(:applet, Applet.Server)[:colors] ||
-          [
-            trace: IO.ANSI.light_black(),
-            debug: IO.ANSI.light_cyan(),
-            info: IO.ANSI.blue(),
-            warn: IO.ANSI.yellow(),
-            error: IO.ANSI.light_red()
-          ]
-
-      colors = Enum.into(colors, %{})
+      colors = Application.get_env(:applet, Applet.Server)[:colors] |> Enum.into(%{})
 
       loop = fn loop ->
         receive do
