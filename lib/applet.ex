@@ -15,10 +15,8 @@ defmodule Applet do
   end
 
   def path() do
-    # HOME works for production
-    # File.cwd! works for both
-    default = "#{File.cwd!()}/applets"
-    Shared.get("applets:path", default)
+    config = Application.get_env(:applet, __MODULE__)
+    Shared.get("applets:path", config[:path])
   end
 
   # for scripts and subscripts

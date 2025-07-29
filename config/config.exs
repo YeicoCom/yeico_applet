@@ -1,11 +1,14 @@
 import Config
 
+# HOME works for production
+# File.cwd! works for both
+config :applet, Applet, path: "#{File.cwd!()}/applets"
 config :applet, Applet.Store, table: "store.dets"
 config :applet, Applet.Api.Ddb, table: "api.dets"
 
-# see exs/colors.exs
+# see colors.exs
 config :applet, Applet.Server,
-  port: 3999,
+  port: 5999,
   colors: [
     trace: IO.ANSI.light_black(),
     debug: IO.ANSI.light_cyan(),

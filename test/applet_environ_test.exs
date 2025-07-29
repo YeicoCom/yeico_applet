@@ -13,7 +13,7 @@ defmodule AppletEvironTest do
     """
 
     home = System.get_env("HOME")
-    path = "#{home}/yeico_applet/applets"
+    path = "#{home}/yeico_applet/test/applets"
 
     Run.applet(code, fn %{route: route, name: name} ->
       Wait.success(fn -> assert name == Adb.get(:name) end)
