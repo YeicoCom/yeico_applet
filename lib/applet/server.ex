@@ -60,9 +60,8 @@ defmodule Applet.Server do
       "install " <> route ->
         route = String.trim(route)
         Logger.notice("Applet client #{client.port} install #{route}")
-        code = Applet.load!(route)
-        :ok = Store.upsert(route, code)
-        {:ok, _pid} = Applet.start!(route, code)
+        :ok = Applet.save!(route)
+        {:ok, _pid} = Applet.start!(route)
         state
 
       "uninstall " <> route ->

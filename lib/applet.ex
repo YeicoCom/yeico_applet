@@ -22,9 +22,9 @@ defmodule Applet do
   # for scripts and subscripts
   # tryout.exs
   # tryout/tryout.exs
-  def load!(route) do
-    path = Path.join(Applet.path(), route)
-    File.read!(path)
+  def load!(route, path \\ nil) do
+    path = if path, do: path, else: path()
+    File.read!(Path.join(path, route))
   end
 
   def await(poll \\ 100) do
@@ -35,8 +35,10 @@ defmodule Applet do
     |> is_list()
   end
 
-  def save!(route, code) do
-    :ok = Store.upsert(route, code)
+  def save!(route) do
+    # no sense to indidualize applet path
+    # since there is a single statics folder
+    :ok = Store.upsert(route, nil)
   end
 
   def delete!(route) do
@@ -46,7 +48,7 @@ defmodule Applet do
   # functions only to avoid poluting module space
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
-  def start!(route, code, opts \\ []) do
+  def start!(route, code \\ nil, opts \\ []) do
     argv = Keyword.get(opts, :argv, [])
     code = if code, do: code, else: load!(route)
     start = {Runner, :start_link, [route, code, argv]}
@@ -76,13 +78,13 @@ defmodule Applet do
     list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
     list = stored()
-    list |> Enum.each(fn route -> start!(route, nil) end)
+    list |> Enum.each(fn route -> start!(route) end)
   end
 
   def restart!() do
     list = started()
     list |> Enum.each(fn {_, route} -> stop!(route) end)
-    list |> Enum.each(fn {_, route} -> start!(route, nil) end)
+    list |> Enum.each(fn {_, route} -> start!(route) end)
   end
 
   def reset!() do
