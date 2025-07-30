@@ -74,6 +74,7 @@ defmodule Applet.Api do
   def pid(%Task{pid: pid}), do: pid
   def file(), do: Path.basename(route())
   def name(), do: Path.basename(route(), ".exs")
+  def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
   def append(path, content), do: File.write!(path, content, [:append])
   def hostname(), do: Utils.hostname()
   def relative(route), do: Path.join(Path.dirname(route()), route)
