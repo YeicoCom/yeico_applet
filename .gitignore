@@ -23,3 +23,5 @@ applet-*.tar
 /tmp/
 
 *.dets
+
+applets/

@@ -15,6 +15,15 @@ iex --sname remote@localhost --cookie cookie --remsh applet@localhost
 mix run exs/colors.exs
 ```
 
+```elixir
+# from iex
+# runs ${PWD}/applets/tryout.exs
+Applet.run!("tryout.exs")
+# runs ${PWD}/applets/tryout/tryout.exs
+Applet.run!("tryout/tryout.exs")
+# type INTRO to stop logging
+```
+
 ## Fixme
 
 - [ ] app shutdowns from time to time on recompile from eix

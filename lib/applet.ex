@@ -120,4 +120,60 @@ defmodule Applet do
     Bus.subscribe!({:logger, route, :warn}, sargs)
     Bus.subscribe!({:logger, route, :error}, sargs)
   end
+
+  # for iex
+  # Applet.run!("tryout.exs")
+  # runs ${PWD}/applets/tryout.exs
+  # Applet.run!("tryout/tryout.exs")
+  # runs ${PWD}/applets/tryout/tryout.exs
+  # type INTRO to stop logging
+  def run!(route, opts \\ []) do
+    level = Keyword.get(opts, :level, :trace)
+    argv = Keyword.get(opts, :argv, [])
+    code = Applet.load!(route)
+
+    # Use Task because Tasks points to a different stdin
+    # handle async to avoid tainting the iex process
+    Task.async(fn ->
+      pid = self()
+
+      Task.async(fn ->
+        line = IO.read(:line)
+        send(pid, {:stdin, :line, line})
+      end)
+
+      Applet.subscribe!(level, route, nil)
+      start!(route, code, argv: argv)
+
+      colors =
+        Application.get_env(:applet, Applet.Server)[:colors] ||
+          [
+            trace: IO.ANSI.light_black(),
+            debug: IO.ANSI.light_cyan(),
+            info: IO.ANSI.blue(),
+            warn: IO.ANSI.yellow(),
+            error: IO.ANSI.light_red()
+          ]
+
+      colors = Enum.into(colors, %{})
+
+      loop = fn loop ->
+        receive do
+          {:stdin, :line, _line} ->
+            stop!(route)
+
+          {{:logger, ^route, type}, nil, msg} ->
+            utc = NaiveDateTime.utc_now()
+            now = NaiveDateTime.local_now()
+            now = Map.put(now, :microsecond, utc.microsecond)
+            log = Utils.fmt(colors[type], now, type, msg)
+            IO.write(log)
+            loop.(loop)
+        end
+      end
+
+      loop.(loop)
+    end)
+    |> Task.await(:infinity)
+  end
 end
