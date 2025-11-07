@@ -46,8 +46,9 @@ defmodule Applet.Server do
 
   defp serve(client, state) do
     with {:ok, cmd} <- Tcp.read(client),
+         cmd <- String.trim(cmd),
          state = %{} <- serve(client, state, cmd) do
-      :ok = Tcp.write(client, ["ok ", cmd])
+      :ok = Tcp.write(client, ["ok ", cmd, "\n"])
       serve(client, state)
     else
       unexpected ->
@@ -58,52 +59,48 @@ defmodule Applet.Server do
   defp serve(client, state, cmd) do
     case cmd do
       "install " <> route ->
-        route = String.trim(route)
         Logger.notice("Applet client #{client.port} install #{route}")
         :ok = Applet.save!(route)
         {:ok, _pid} = Applet.start!(route)
         state
 
       "uninstall " <> route ->
-        route = String.trim(route)
         Logger.notice("Applet client #{client.port} uninstall #{route}")
         :ok = Store.delete(route)
         :ok = Applet.stop!(route)
         state
 
-      "reboot\n" ->
+      "reboot" ->
         Logger.notice("Applet client #{client.port} reboot")
         :ok = Applet.reboot!()
         state
 
-      "restart\n" ->
+      "restart" ->
         Logger.notice("Applet client #{client.port} restart")
         :ok = Applet.restart!()
         state
 
-      "reset\n" ->
+      "reset" ->
         Logger.notice("Applet client #{client.port} reset")
         :ok = Applet.reset!()
         state
 
-      "list stored\n" ->
+      "list stored" ->
         fun = fn n -> :ok = Tcp.write(client, ">#{n}\n") end
         Applet.stored() |> Enum.each(fun)
         state
 
-      "list started\n" ->
+      "list started" ->
         fun = fn {_, n} -> :ok = Tcp.write(client, ">#{n}\n") end
         Applet.started() |> Enum.each(fun)
         state
 
       "ansicolor " <> ansicolor ->
-        ansicolor = String.trim(ansicolor)
         Logger.notice("Applet client #{client.port} ansicolor #{ansicolor}")
         ansicolor = String.to_existing_atom(ansicolor)
         Map.put(state, :ansicolor, ansicolor)
 
       "localtime " <> localtime ->
-        localtime = String.trim(localtime)
         Logger.notice("Applet client #{client.port} localtime #{localtime}")
         local = NaiveDateTime.from_iso8601!(localtime)
         utc = NaiveDateTime.utc_now()
@@ -134,7 +131,6 @@ defmodule Applet.Server do
   end
 
   defp run_loop(level, client, state, route, cmd) do
-    route = String.trim(route)
     Utils.defer(fn -> Applet.stop!(route) end)
     Logger.notice("Applet client #{client.port} run #{level} #{route}")
     Applet.stop!(route)
@@ -144,12 +140,11 @@ defmodule Applet.Server do
 
   defp log_loop(level, client, state, route, cmd, code \\ nil) do
     async_read(client)
-    route = String.trim(route)
     Logger.notice("Applet client #{client.port} #{level} #{route}")
     level = String.to_existing_atom(level)
     Applet.subscribe!(level, route, client)
     if code, do: {:ok, _pid} = Applet.start!(route, code)
-    :ok = Tcp.write(client, ["ok ", cmd])
+    :ok = Tcp.write(client, ["ok ", cmd, "\n"])
     log_loop(client, route, state)
   end
 
