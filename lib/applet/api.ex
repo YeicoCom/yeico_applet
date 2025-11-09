@@ -57,7 +57,6 @@ defmodule Applet.Api do
   # expected %Phoenix.LiveView.Rendered{}
 
   alias Applet.Utils
-  alias Applet.Shared
   alias Applet.Api.Bus
 
   def route(), do: call(:route)
@@ -72,12 +71,8 @@ defmodule Applet.Api do
   def sleep(), do: :timer.sleep(:infinity)
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
-  def file(), do: Path.basename(route())
-  def name(), do: Path.basename(route(), ".exs")
   def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
-  def append(path, content), do: File.write!(path, content, [:append])
   def hostname(), do: Utils.hostname()
-  def relative(route), do: Path.join(Path.dirname(route()), route)
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
@@ -96,12 +91,6 @@ defmodule Applet.Api do
     |> Enum.to_list()
     |> is_list()
   end
-
-  def query(), do: Shared.get("applets:query")
-  def query(query), do: query().(query, [])
-  def query(query, opts), do: query().(query, opts)
-  def hook(hook), do: Shared.get("applets:hook:#{hook}")
-  def hook(hook, args), do: apply(hook(hook), args)
 
   def async(fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
@@ -142,36 +131,6 @@ defmodule Applet.Api do
     end
 
     spawn(wrap_async(entry))
-  end
-
-  def post(topic, msg) do
-    Bus.broadcast!({Bus, :post, topic}, msg)
-  end
-
-  def on(topic, fun) when is_function(fun, 1) do
-    safe = wrap_safe(fun)
-
-    loop = fn loop ->
-      receive do
-        {{Bus, :post, ^topic}, ^fun, msg} -> safe.(msg)
-      end
-
-      loop.(loop)
-    end
-
-    pid = self()
-
-    init = fn ->
-      Bus.subscribe!({Bus, :post, topic}, fun)
-      send(pid, {Bus, :on, topic, fun})
-      loop.(loop)
-    end
-
-    task = call({:async, wrap_async(init)})
-
-    receive do
-      {Bus, :on, ^topic, ^fun} -> task
-    end
   end
 
   def evalf(route, binding \\ []) do

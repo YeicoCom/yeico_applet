@@ -41,6 +41,7 @@ defmodule Applet.Runner do
     end
 
     Api.info("Applet starting #{route}")
+    Api.defer(fn -> Api.info("Applet exited #{route}") end)
     {result, binding} = Api.evals(route, code, argv: argv)
     Unique.update!({:applet, route}, {result, binding})
     :timer.sleep(:infinity)

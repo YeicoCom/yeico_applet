@@ -51,35 +51,6 @@ defmodule AppletUnhandledTest do
     end)
   end
 
-  test "unhandled on post/on" do
-    code = """
-    use Applet.Api
-    Api.on(:event, fn msg -> raise msg end)
-    Api.post(:event, "MSG1")
-    Api.post(:event, "MSG2")
-    """
-
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
-
-    Run.applet(code, fn _ ->
-      assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"MSG1\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
-
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"MSG2\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
-
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-    end)
-  end
-
   test "unhandled on defer" do
     code = """
     use Applet.Api

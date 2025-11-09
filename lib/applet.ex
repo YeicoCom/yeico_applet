@@ -23,9 +23,8 @@ defmodule Applet do
   # for scripts and subscripts
   # tryout.exs
   # tryout/tryout.exs
-  def load!(route, path \\ nil) do
-    path = if path, do: path, else: path()
-    File.read!(Path.join(path, route))
+  def load!(route) do
+    File.read!(Path.join(path(), route))
   end
 
   def await(poll \\ 100) do
