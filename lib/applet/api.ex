@@ -72,6 +72,7 @@ defmodule Applet.Api do
   def sleep(millis), do: :timer.sleep(millis)
   def pid(%Task{pid: pid}), do: pid
   def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
+  def kill(%Task{pid: pid}) when is_pid(pid), do: Utils.kill_pid(pid)
   def hostname(), do: Utils.hostname()
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)

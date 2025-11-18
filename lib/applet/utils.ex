@@ -36,6 +36,7 @@ defmodule Applet.Utils do
   end
 
   def kill_pid(pid) when is_pid(pid) do
+    Process.unlink(pid)
     ref = Process.monitor(pid)
     Process.exit(pid, :kill)
 
