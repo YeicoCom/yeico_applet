@@ -36,8 +36,9 @@ defmodule Applet do
   end
 
   def save!(route) do
-    # no sense to indidualize applet path
+    # no sense to individualize applet path
     # since there is a single statics folder
+    # nil content to read code on load
     :ok = Store.upsert(route, nil)
   end
 
