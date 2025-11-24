@@ -180,6 +180,12 @@ defmodule Applet.Api do
     {result, binding |> Enum.into(%{})}
   end
 
+  def resolve(host) do
+    with {:ok, {a, b, c, d}} <- :inet.getaddr(~c"#{host}", :inet) do
+      {:ok, "#{a}.#{b}.#{c}.#{d}"}
+    end
+  end
+
   # log with entry route
   defp log(type, msg) when is_binary(msg) do
     entry = entry()

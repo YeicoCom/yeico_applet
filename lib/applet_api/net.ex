@@ -1,6 +1,6 @@
 defmodule Applet.Api.Net do
-  def hip(hostname) when is_binary(hostname) do
-    with {:ok, [{a, b, c, d} | _]} <- DNS.resolve(hostname) do
+  def hip(host) when is_binary(host) do
+    with {:ok, {a, b, c, d}} <- :inet.getaddr(~c"#{host}", :inet) do
       {:ok, "#{a}.#{b}.#{c}.#{d}"}
     end
   end
