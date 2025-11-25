@@ -22,7 +22,6 @@ defmodule Applet.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:dns, "~> 2.4.0"},
       {:phoenix_live_view, "~> 1.0"}
     ]
   end
