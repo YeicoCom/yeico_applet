@@ -1,7 +1,29 @@
 defmodule Applet.Utils do
   use Applet.Alias
 
-  def hostname(), do: :inet.gethostname() |> elem(1) |> to_string()
+  def hostname() do
+    {:ok, host} = :inet.gethostname()
+    to_string(host)
+  end
+
+  def resolve(host) do
+    with {:ok, {a, b, c, d}} <- :inet.getaddr(~c"#{host}", :inet) do
+      {:ok, "#{a}.#{b}.#{c}.#{d}"}
+    end
+  end
+
+  def defer(fun), do: defer(self(), fun)
+
+  def defer(pid, fun) when is_pid(pid) and is_function(fun, 0) do
+    # spawn to avoid sudden death
+    spawn(fn ->
+      ref = Process.monitor(pid)
+
+      receive do
+        {:DOWN, ^ref, _, ^pid, _} -> run_safe(fun)
+      end
+    end)
+  end
 
   def run_safe(fun) when is_function(fun, 0) do
     try do
@@ -80,18 +102,5 @@ defmodule Applet.Utils do
       if(color, do: IO.ANSI.reset(), else: ""),
       "\n"
     ]
-  end
-
-  def defer(fun) when is_function(fun, 0) do
-    pid = self()
-
-    # spawn to avoid sudden death
-    spawn(fn ->
-      ref = Process.monitor(pid)
-
-      receive do
-        {:DOWN, ^ref, _, ^pid, _} -> run_safe(fun)
-      end
-    end)
   end
 end

@@ -74,6 +74,7 @@ defmodule Applet.Api do
   def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
   def kill(%Task{pid: pid}) when is_pid(pid), do: Utils.kill_pid(pid)
   def hostname(), do: Utils.hostname()
+  def resolve(host), do: Utils.resolve(host)
   def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
@@ -119,9 +120,10 @@ defmodule Applet.Api do
     wrap_async(safe)
   end
 
-  def defer(fun) when is_function(fun, 0) do
+  def defer(fun), do: defer(self(), fun)
+
+  def defer(pid, fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
-    pid = self()
 
     entry = fn ->
       ref = Process.monitor(pid)
@@ -178,12 +180,6 @@ defmodule Applet.Api do
     end
 
     {result, binding |> Enum.into(%{})}
-  end
-
-  def resolve(host) do
-    with {:ok, {a, b, c, d}} <- :inet.getaddr(~c"#{host}", :inet) do
-      {:ok, "#{a}.#{b}.#{c}.#{d}"}
-    end
   end
 
   # log with entry route
