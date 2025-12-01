@@ -28,7 +28,12 @@ defmodule Applet.Server do
     Store.list()
     |> Enum.each(fn {n, d} ->
       Logger.notice("Applet auto start #{n}")
-      Applet.start!(n, d)
+
+      spawn(fn ->
+        with {:error, e} <- Utils.run_safe(fn -> Applet.start!(n, d) end) do
+          Logger.warning("Applet start error #{n} #{inspect(e)}")
+        end
+      end)
     end)
 
     {:ok, server} = Tcp.listen("127.0.0.1", port, line: true)
@@ -156,7 +161,7 @@ defmodule Applet.Server do
         localdiff = Map.get(state, :localdiff, 0)
         utc = NaiveDateTime.utc_now()
         now = NaiveDateTime.add(utc, localdiff, :second)
-        log = Utils.fmt(color, now, type, msg)
+        log = Utils.fmt_log(color, now, type, msg)
         :ok = Tcp.write(client, log)
         log_loop(client, route, state)
 

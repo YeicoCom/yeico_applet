@@ -1,6 +1,12 @@
 defmodule Applet.Utils do
   use Applet.Alias
 
+  def pid(%Task{pid: pid}), do: pid
+
+  def sleep(), do: :timer.sleep(:infinity)
+
+  def sleep(millis), do: :timer.sleep(millis)
+
   def hostname() do
     {:ok, host} = :inet.gethostname()
     to_string(host)
@@ -57,6 +63,8 @@ defmodule Applet.Utils do
     |> Enum.each(&kill_pid(elem(&1, 0)))
   end
 
+  def kill_pid(%Task{pid: pid}), do: kill_pid(pid)
+
   def kill_pid(pid) when is_pid(pid) do
     Process.unlink(pid)
     ref = Process.monitor(pid)
@@ -89,7 +97,7 @@ defmodule Applet.Utils do
     end
   end
 
-  def fmt(color, dt, type, msg) when is_binary(msg) do
+  def fmt_log(color, dt, type, msg) when is_binary(msg) do
     dt = NaiveDateTime.truncate(dt, :millisecond)
 
     [

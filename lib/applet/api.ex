@@ -68,9 +68,9 @@ defmodule Applet.Api do
   def info(msg), do: log(:info, msg)
   def warn(msg), do: log(:warn, msg)
   def error(msg), do: log(:error, msg)
-  def sleep(), do: :timer.sleep(:infinity)
-  def sleep(millis), do: :timer.sleep(millis)
-  def pid(%Task{pid: pid}), do: pid
+  def sleep(), do: Utils.sleep()
+  def sleep(millis), do: Utils.sleep(millis)
+  def pid(%Task{} = task), do: Utils.pid(task)
   def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
   def kill(%Task{pid: pid}) when is_pid(pid), do: Utils.kill_pid(pid)
   def hostname(), do: Utils.hostname()

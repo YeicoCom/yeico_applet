@@ -166,7 +166,7 @@ defmodule Applet do
             utc = NaiveDateTime.utc_now()
             now = NaiveDateTime.local_now()
             now = Map.put(now, :microsecond, utc.microsecond)
-            log = Utils.fmt(colors[type], now, type, msg)
+            log = Utils.fmt_log(colors[type], now, type, msg)
             IO.write(log)
             loop.(loop)
         end
