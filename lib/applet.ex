@@ -35,7 +35,7 @@ defmodule Applet do
     |> is_list()
   end
 
-  def save!(route) do
+  def store!(route) do
     # no sense to individualize applet path
     # since there is a single statics folder
     # nil content to read code on load

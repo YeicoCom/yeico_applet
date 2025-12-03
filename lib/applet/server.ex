@@ -65,7 +65,7 @@ defmodule Applet.Server do
     case cmd do
       "install " <> route ->
         Logger.notice("Applet client #{client.port} install #{route}")
-        :ok = Applet.save!(route)
+        :ok = Applet.store!(route)
         {:ok, _pid} = Applet.start!(route)
         state
 
