@@ -42,4 +42,54 @@ defmodule AppletEvalTest do
       Wait.success(fn -> assert true == Adb.get(:done) end)
     end)
   end
+
+  test "evalf compile error with r" do
+    code = """
+    use Applet.Api
+    Api.evalf("test/compile1.exs")
+    """
+
+    port = Application.get_env(:applet, Server)[:port]
+
+    {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
+    :ok = Tcp.write(client, "trace applet_test.exs\n")
+    assert {:ok, "ok trace applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "ERROR", msg] = String.split(line, " ", parts: 3, trim: true)
+      assert msg =~ "test/compile1.exs:3 expected -> clauses for :else in"
+
+      :ok = Tcp.close(client)
+    end)
+  end
+
+  test "evalf compile warning with {r, c}" do
+    code = """
+    use Applet.Api
+    Api.evalf("test/compile2.exs")
+    """
+
+    port = Application.get_env(:applet, Server)[:port]
+
+    {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
+    :ok = Tcp.write(client, "trace applet_test.exs\n")
+    assert {:ok, "ok trace applet_test.exs\n"} = Tcp.read(client)
+
+    Run.applet(code, fn _ ->
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "INFO", "Applet starting applet_test.exs"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      line = Tcp.read(client) |> elem(1) |> String.trim()
+      assert [_, "WARN", "test/compile2.exs:{5, 13} trailing commas are not allowed inside function/macro call arguments"] =
+               String.split(line, " ", parts: 3, trim: true)
+
+      :ok = Tcp.close(client)
+    end)
+  end
 end

@@ -162,9 +162,10 @@ defmodule Applet.Api do
         end
       end)
 
+    # possition is row or {row, col}
     Enum.each(diagnostics, fn
-      %{severity: :warning, position: p, message: m, file: f} -> warn("#{f}:#{p} #{m}")
-      %{severity: :error, position: p, message: m, file: f} -> error("#{f}:#{p} #{m}")
+      %{severity: :warning, position: p, message: m, file: f} -> warn("#{f}:#{inspect(p)} #{m}")
+      %{severity: :error, position: p, message: m, file: f} -> error("#{f}:#{inspect(p)} #{m}")
     end)
 
     # too much error types to ensure full coverage

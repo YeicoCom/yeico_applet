@@ -24,4 +24,4 @@ applet-*.tar
 
 *.dets
 
-applets/
+/applets/
