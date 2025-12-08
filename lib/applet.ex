@@ -10,6 +10,7 @@ defmodule Applet do
   end
 
   def start() do
+    File.mkdir_p!(path())
     Shared.put("applets:path", path())
     Shared.put("applets:started", true)
   end
