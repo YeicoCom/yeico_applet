@@ -147,6 +147,7 @@ defmodule Applet do
   # type INTRO to stop logging
   def log(route, opts \\ []) do
     run = Keyword.get(opts, :run)
+    await = Keyword.get(opts, :await, fn task -> Task.await(task, :infinity) end)
     read = Keyword.get(opts, :read, fn -> IO.read(:line) end)
     write = Keyword.get(opts, :write, &IO.write/1)
     level = Keyword.get(opts, :level, :trace)
@@ -199,6 +200,6 @@ defmodule Applet do
 
       loop.(loop)
     end)
-    |> Task.await(:infinity)
+    |> await.()
   end
 end
