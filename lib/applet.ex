@@ -123,15 +123,19 @@ defmodule Applet do
   end
 
   # for iex
+  #
   # Applet.run!("tryout.exs")
   # runs ${PWD}/applets/tryout.exs
-  # Applet.run!("tryout/tryout.exs")
-  # runs ${PWD}/applets/tryout/tryout.exs
+  #
+  # Applet.run!("tryout.exs", code: "")
+  # runs passed code ""
+  #
   # type INTRO to stop logging
   def run!(route, opts \\ []) do
     level = Keyword.get(opts, :level, :trace)
     argv = Keyword.get(opts, :argv, [])
-    code = Applet.load!(route)
+    code = Keyword.get(opts, :code, nil)
+    code = code || Applet.load!(route)
 
     # Use Task because Tasks points to a different stdin
     # handle async to avoid tainting the iex process

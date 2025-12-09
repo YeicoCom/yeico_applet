@@ -153,6 +153,8 @@ defmodule Applet.Api do
           end)
         end
 
+        # return is either the try or the rescue block
+        # resulting expression in efter block is ignored
         try do
           Code.eval_string(code, binding, file: route)
         rescue
