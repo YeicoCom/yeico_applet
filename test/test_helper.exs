@@ -8,7 +8,7 @@ defmodule Run do
     Adb.reset()
     route = Keyword.get(opts, :route, "applet_test.exs")
     name = String.trim_trailing(route, ".exs")
-    {:ok, pid} = Applet.start!(route, code)
+    {:ok, pid} = Applet.start!(route, code: code)
     tests.(%{pid: pid, route: route, name: name})
     Applet.stop!(route)
   end

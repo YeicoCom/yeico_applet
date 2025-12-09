@@ -14,7 +14,7 @@ defmodule AppletUnhandledTest do
 
     Run.applet(code, fn _ ->
       assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
+      assert msg == "Applet starting: applet_test.exs"
       assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
       assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC\"}"
       assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
@@ -34,7 +34,7 @@ defmodule AppletUnhandledTest do
 
     Run.applet(code, fn _ ->
       assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
+      assert msg == "Applet starting: applet_test.exs"
       assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
       assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC1\"}"
       assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
@@ -61,7 +61,7 @@ defmodule AppletUnhandledTest do
 
     Run.applet(code, fn _ ->
       assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
+      assert msg == "Applet starting: applet_test.exs"
       assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
       assert msg == "UNHANDLED rescue error %RuntimeError{message: \"DEFER\"}"
       assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}

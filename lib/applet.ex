@@ -50,9 +50,10 @@ defmodule Applet do
   # functions only to avoid poluting module space
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
-  def start!(route, code \\ nil, opts \\ []) do
+  def start!(route, opts \\ []) do
+    code = Keyword.get(opts, :code)
+    code = code || load!(route)
     argv = Keyword.get(opts, :argv, [])
-    code = if code, do: code, else: load!(route)
     start = {Runner, :start_link, [route, code, argv]}
     # temporary never restarted
     # dynamic supervisor requires but ignores id
@@ -132,23 +133,42 @@ defmodule Applet do
   #
   # type INTRO to stop logging
   def run!(route, opts \\ []) do
-    level = Keyword.get(opts, :level, :trace)
+    code = Keyword.get(opts, :code)
+    code = code || load!(route)
     argv = Keyword.get(opts, :argv, [])
-    code = Keyword.get(opts, :code, nil)
-    code = code || Applet.load!(route)
+    run = fn -> start!(route, code: code, argv: argv) end
+    opts = Keyword.drop(opts, [:code, :argv])
+    opts = Keyword.merge(opts, stop: true, run: run)
+    log(route, opts)
+  end
 
+  # for iex
+  #
+  # type INTRO to stop logging
+  def log(route, opts \\ []) do
+    run = Keyword.get(opts, :run)
+    read = Keyword.get(opts, :read, fn -> IO.read(:line) end)
+    write = Keyword.get(opts, :write, &IO.write/1)
+    level = Keyword.get(opts, :level, :trace)
+    colored = Keyword.get(opts, :colored, true)
+    stop = Keyword.get(opts, :stop, false)
+    local = NaiveDateTime.local_now() |> NaiveDateTime.to_iso8601
+    local = Keyword.get(opts, :local, local)
+    local = NaiveDateTime.from_iso8601!(local)
+    utc = NaiveDateTime.utc_now()
+    diff = NaiveDateTime.diff(local, utc)
     # Use Task because Tasks points to a different stdin
     # handle async to avoid tainting the iex process
     Task.async(fn ->
       pid = self()
 
       Task.async(fn ->
-        line = IO.read(:line)
+        line = read.()
         send(pid, {:stdin, :line, line})
       end)
 
-      Applet.subscribe!(level, route, nil)
-      start!(route, code, argv: argv)
+      subscribe!(level, route, nil)
+      if run, do: run.()
 
       colors =
         Application.get_env(:applet, Applet.Server)[:colors] ||
@@ -165,14 +185,14 @@ defmodule Applet do
       loop = fn loop ->
         receive do
           {:stdin, :line, _line} ->
-            stop!(route)
+            if stop, do: stop!(route)
 
           {{:logger, ^route, type}, nil, msg} ->
             utc = NaiveDateTime.utc_now()
-            now = NaiveDateTime.local_now()
-            now = Map.put(now, :microsecond, utc.microsecond)
-            log = Utils.fmt_log(colors[type], now, type, msg)
-            IO.write(log)
+            now = NaiveDateTime.add(utc, diff, :second)
+            color = if colored, do: colors[type]
+            log = Utils.fmt_log(color, now, type, msg)
+            write.(log)
             loop.(loop)
         end
       end

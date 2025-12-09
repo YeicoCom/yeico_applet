@@ -56,7 +56,7 @@ defmodule AppletServerTest do
   test "applet server reboot" do
     :ok = Store.upsert("test.exs", nil)
     :ok = Store.upsert("test/test.exs", nil)
-    {:ok, _} = Applet.start!("test.exs", nil)
+    {:ok, _} = Applet.start!("test.exs")
     port = Application.get_env(:applet, Server)[:port]
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "reboot\n")
@@ -71,7 +71,7 @@ defmodule AppletServerTest do
   test "applet server restart" do
     :ok = Store.upsert("test.exs", nil)
     :ok = Store.upsert("test/test.exs", nil)
-    {:ok, pid1} = Applet.start!("test.exs", nil)
+    {:ok, pid1} = Applet.start!("test.exs")
     port = Application.get_env(:applet, Server)[:port]
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "restart\n")
@@ -94,7 +94,7 @@ defmodule AppletServerTest do
   test "applet server reset" do
     :ok = Store.upsert("test.exs", nil)
     :ok = Store.upsert("test/test.exs", nil)
-    {:ok, _} = Applet.start!("test.exs", nil)
+    {:ok, _} = Applet.start!("test.exs")
     port = Application.get_env(:applet, Server)[:port]
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "reset\n")

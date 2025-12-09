@@ -15,7 +15,7 @@ defmodule AppletRunLogTest do
     {:ok, "ok run trace test/log.exs\n"} = Tcp.read(client)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    assert [_, "INFO", "Applet starting test/log.exs"] =
+    assert [_, "INFO", "Applet starting: test/log.exs"] =
              String.split(line, " ", parts: 3, trim: true)
 
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -40,7 +40,7 @@ defmodule AppletRunLogTest do
     {:ok, "ok run debug test/log.exs\n"} = Tcp.read(client)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    assert [_, "INFO", "Applet starting test/log.exs"] =
+    assert [_, "INFO", "Applet starting: test/log.exs"] =
              String.split(line, " ", parts: 3, trim: true)
 
     line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -62,7 +62,7 @@ defmodule AppletRunLogTest do
     {:ok, "ok run info test/log.exs\n"} = Tcp.read(client)
     line = Tcp.read(client) |> elem(1) |> String.trim()
 
-    assert [_, "INFO", "Applet starting test/log.exs"] =
+    assert [_, "INFO", "Applet starting: test/log.exs"] =
              String.split(line, " ", parts: 3, trim: true)
 
     line = Tcp.read(client) |> elem(1) |> String.trim()

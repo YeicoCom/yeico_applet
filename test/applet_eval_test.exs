@@ -57,7 +57,7 @@ defmodule AppletEvalTest do
 
     Run.applet(code, fn _ ->
       line = Tcp.read(client) |> elem(1) |> String.trim()
-      assert [_, "INFO", "Applet starting applet_test.exs"] =
+      assert [_, "INFO", "Applet starting: applet_test.exs"] =
                String.split(line, " ", parts: 3, trim: true)
 
       line = Tcp.read(client) |> elem(1) |> String.trim()
@@ -82,7 +82,7 @@ defmodule AppletEvalTest do
 
     Run.applet(code, fn _ ->
       line = Tcp.read(client) |> elem(1) |> String.trim()
-      assert [_, "INFO", "Applet starting applet_test.exs"] =
+      assert [_, "INFO", "Applet starting: applet_test.exs"] =
                String.split(line, " ", parts: 3, trim: true)
 
       line = Tcp.read(client) |> elem(1) |> String.trim()

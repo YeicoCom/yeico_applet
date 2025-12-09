@@ -26,11 +26,11 @@ defmodule Applet.Server do
     true = Process.register(self(), __MODULE__)
 
     Store.list()
-    |> Enum.each(fn {n, d} ->
+    |> Enum.each(fn {n, _} ->
       Logger.notice("Applet auto start #{n}")
 
       spawn(fn ->
-        with {:error, e} <- Utils.run_safe(fn -> Applet.start!(n, d) end) do
+        with {:error, e} <- Utils.run_safe(fn -> Applet.start!(n) end) do
           Logger.warning("Applet start error #{n} #{inspect(e)}")
         end
       end)
@@ -148,7 +148,7 @@ defmodule Applet.Server do
     Logger.notice("Applet client #{client.port} #{level} #{route}")
     level = String.to_existing_atom(level)
     Applet.subscribe!(level, route, client)
-    if code, do: {:ok, _pid} = Applet.start!(route, code)
+    if code, do: {:ok, _pid} = Applet.start!(route, code: code)
     :ok = Tcp.write(client, ["ok ", cmd, "\n"])
     log_loop(client, route, state)
   end

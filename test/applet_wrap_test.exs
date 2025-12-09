@@ -21,7 +21,7 @@ defmodule AppletWrapTest do
       Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
       Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
       assert_receive {{:logger, ^route, :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
+      assert msg == "Applet starting: applet_test.exs"
       assert_receive {{:logger, ^route, :debug}, nil, msg}
       assert msg =~ "UNHANDLED rescue error %RuntimeError"
       assert_receive {{:logger, ^route, :trace}, nil, msg}
@@ -51,7 +51,7 @@ defmodule AppletWrapTest do
       Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
       Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
       assert_receive {{:logger, ^route, :info}, nil, msg}
-      assert msg == "Applet starting applet_test.exs"
+      assert msg == "Applet starting: applet_test.exs"
       assert_receive {{:logger, ^route, :debug}, nil, msg}
       assert msg =~ "UNHANDLED rescue error %RuntimeError"
       assert_receive {{:logger, ^route, :trace}, nil, msg}
