@@ -165,8 +165,8 @@ defmodule Applet do
       pid = self()
 
       Task.async(fn ->
-        line = read.()
-        send(pid, {:stdin, :line, line})
+        resp = read.()
+        send(pid, {:stop, :read, resp})
       end)
 
       subscribe!(level, route, nil)
@@ -186,7 +186,7 @@ defmodule Applet do
 
       loop = fn loop ->
         receive do
-          {:stdin, :line, _line} ->
+          {:stop, _src, _resp} ->
             if stop, do: stop!(route)
 
           {{:logger, ^route, type}, nil, msg} ->
