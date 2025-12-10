@@ -25,6 +25,7 @@ defmodule Applet.Dets do
 
   defmacro __using__(_) do
     quote do
+      alias Applet.Shared
       alias Applet.Dets
       require Logger
       use GenServer
@@ -45,6 +46,7 @@ defmodule Applet.Dets do
         table = config[:table]
         table = Path.expand(table)
         module = String.trim_leading("#{__MODULE__}", "Elixir.Applet.")
+        Shared.put("applets:dets:#{module}", table)
         Logger.notice("Applet dets module #{module} table #{table}")
         table = to_charlist(table)
         {:ok, table} = Dets.open(table)

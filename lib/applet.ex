@@ -137,8 +137,9 @@ defmodule Applet do
     code = code || load!(route)
     argv = Keyword.get(opts, :argv, [])
     run = fn -> start!(route, code: code, argv: argv) end
+    stop = Keyword.get(opts, :stop, true)
     opts = Keyword.drop(opts, [:code, :argv])
-    opts = Keyword.merge(opts, stop: true, run: run)
+    opts = Keyword.merge(opts, run: run, stop: stop)
     log(route, opts)
   end
 
