@@ -5,6 +5,18 @@ defmodule Applet.Shared do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
+  def keys() do
+    Agent.get(__MODULE__, &Map.keys(&1))
+  end
+
+  def list() do
+    Agent.get(__MODULE__, &Map.to_list(&1))
+  end
+
+  def has_key?(key) do
+    Agent.get(__MODULE__, &Map.has_key?(&1, key))
+  end
+
   def get(key, def \\ nil) do
     Agent.get(__MODULE__, &Map.get(&1, key, def))
   end

@@ -154,7 +154,7 @@ defmodule Applet do
     level = Keyword.get(opts, :level, :trace)
     colored = Keyword.get(opts, :colored, true)
     stop = Keyword.get(opts, :stop, false)
-    local = NaiveDateTime.local_now() |> NaiveDateTime.to_iso8601
+    local = NaiveDateTime.local_now() |> NaiveDateTime.to_iso8601()
     local = Keyword.get(opts, :local, local)
     local = NaiveDateTime.from_iso8601!(local)
     utc = NaiveDateTime.utc_now()

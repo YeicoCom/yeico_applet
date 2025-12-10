@@ -57,6 +57,7 @@ defmodule AppletEvalTest do
 
     Run.applet(code, fn _ ->
       line = Tcp.read(client) |> elem(1) |> String.trim()
+
       assert [_, "INFO", "Applet starting: applet_test.exs"] =
                String.split(line, " ", parts: 3, trim: true)
 
@@ -82,11 +83,17 @@ defmodule AppletEvalTest do
 
     Run.applet(code, fn _ ->
       line = Tcp.read(client) |> elem(1) |> String.trim()
+
       assert [_, "INFO", "Applet starting: applet_test.exs"] =
                String.split(line, " ", parts: 3, trim: true)
 
       line = Tcp.read(client) |> elem(1) |> String.trim()
-      assert [_, "WARN", "test/compile2.exs:{5, 13} trailing commas are not allowed inside function/macro call arguments"] =
+
+      assert [
+               _,
+               "WARN",
+               "test/compile2.exs:{5, 13} trailing commas are not allowed inside function/macro call arguments"
+             ] =
                String.split(line, " ", parts: 3, trim: true)
 
       :ok = Tcp.close(client)
