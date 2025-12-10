@@ -92,7 +92,7 @@ defmodule AppletEvalTest do
       assert [
                _,
                "WARN",
-               "test/compile2.exs:{5, 13} trailing commas are not allowed inside function/macro call arguments"
+               "test/compile2.exs:{5, 14} trailing commas are not allowed inside function/macro call arguments"
              ] =
                String.split(line, " ", parts: 3, trim: true)
 

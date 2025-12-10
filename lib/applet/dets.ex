@@ -45,6 +45,7 @@ defmodule Applet.Dets do
         config = Application.get_env(:applet, __MODULE__)
         table = config[:table]
         table = Path.expand(table)
+        table |> Path.dirname() |> File.mkdir_p!()
         module = String.trim_leading("#{__MODULE__}", "Elixir.Applet.")
         Shared.put("applets:dets:#{module}", table)
         Logger.notice("Applet dets module #{module} table #{table}")
