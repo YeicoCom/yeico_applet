@@ -21,11 +21,15 @@ defmodule Applet do
     Shared.get("applets:path", path)
   end
 
+  def path(route) do
+    Path.join(path(), route)
+  end
+
   # for scripts and subscripts
   # tryout.exs
   # tryout/tryout.exs
   def load!(route) do
-    File.read!(Path.join(path(), route))
+    File.read!(path(route))
   end
 
   def await(poll \\ 100) do

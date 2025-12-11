@@ -62,6 +62,7 @@ defmodule Applet.Api do
   def route(), do: call(:route)
   def entry(), do: call(:entry)
   def path(), do: Applet.path()
+  def path(route), do: Applet.path(route)
   def load!(route), do: Applet.load!(route)
   def trace(msg), do: log(:trace, msg)
   def debug(msg), do: log(:debug, msg)
