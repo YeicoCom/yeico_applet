@@ -7,8 +7,7 @@ config :applet, Applet.Store, table: "store.dets"
 config :applet, Applet.Api.Ddb, table: "api.dets"
 
 # see colors.exs
-config :applet, Applet.Server,
-  port: 5999,
+config :applet,
   colors: [
     trace: IO.ANSI.light_black(),
     debug: IO.ANSI.light_cyan(),

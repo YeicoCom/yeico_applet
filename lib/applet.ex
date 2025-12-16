@@ -127,6 +127,17 @@ defmodule Applet do
     Bus.subscribe!({:logger, route, :error}, sargs)
   end
 
+  def colors() do
+    Application.get_env(:applet, :colors) ||
+      [
+        trace: IO.ANSI.light_black(),
+        debug: IO.ANSI.light_cyan(),
+        info: IO.ANSI.blue(),
+        warn: IO.ANSI.yellow(),
+        error: IO.ANSI.light_red()
+      ]
+  end
+
   # for iex
   #
   # Applet.run!("tryout.exs")
@@ -176,17 +187,7 @@ defmodule Applet do
       subscribe!(level, route, nil)
       if run, do: run.()
 
-      colors =
-        Application.get_env(:applet, Applet.Server)[:colors] ||
-          [
-            trace: IO.ANSI.light_black(),
-            debug: IO.ANSI.light_cyan(),
-            info: IO.ANSI.blue(),
-            warn: IO.ANSI.yellow(),
-            error: IO.ANSI.light_red()
-          ]
-
-      colors = Enum.into(colors, %{})
+      colors = Enum.into(colors(), %{})
 
       loop = fn loop ->
         receive do

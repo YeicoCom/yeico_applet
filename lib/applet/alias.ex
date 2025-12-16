@@ -6,7 +6,6 @@ defmodule Applet.Alias do
       alias Applet.Runner
       alias Applet.Unique
       alias Applet.Shared
-      alias Applet.Server
       alias Applet.Store
       alias Applet.Utils
       alias Applet.Dets

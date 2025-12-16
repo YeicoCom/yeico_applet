@@ -18,8 +18,7 @@ defmodule Applet.Application do
         Applet.Api.Ddb,
         Applet.Api.Adb,
         Applet.Api.Mdb,
-        Applet.Api.Udb,
-        Applet.Server
+        Applet.Api.Udb
       ]
       |> Enum.filter(&filter/1)
 
@@ -30,7 +29,6 @@ defmodule Applet.Application do
   end
 
   defp filter(Applet.Store), do: Application.get_env(:applet, Applet.Store)
-  defp filter(Applet.Server), do: Application.get_env(:applet, Applet.Server)
   defp filter(Applet.Api.Ddb), do: Application.get_env(:applet, Applet.Api.Ddb)
   defp filter(_), do: true
 end
