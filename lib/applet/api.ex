@@ -123,7 +123,7 @@ defmodule Applet.Api do
 
   def defer(fun), do: defer(self(), fun)
 
-  def defer(pid, fun) when is_function(fun, 0) do
+  def defer(pid, fun) when is_pid(pid) and is_function(fun, 0) do
     safe = wrap_safe(fun)
 
     entry = fn ->
