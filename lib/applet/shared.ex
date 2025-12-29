@@ -5,6 +5,10 @@ defmodule Applet.Shared do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
+  def reset() do
+    Agent.update(__MODULE__, fn _ -> %{} end)
+  end
+
   def keys() do
     Agent.get(__MODULE__, &Map.keys(&1))
   end
@@ -17,8 +21,16 @@ defmodule Applet.Shared do
     Agent.get(__MODULE__, &Map.has_key?(&1, key))
   end
 
+  def get() do
+    Agent.get(__MODULE__, & &1)
+  end
+
   def get(key, def \\ nil) do
     Agent.get(__MODULE__, &Map.get(&1, key, def))
+  end
+
+  def put(map) do
+    Agent.update(__MODULE__, fn _ -> map end)
   end
 
   def put(key, value) do

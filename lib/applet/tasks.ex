@@ -14,14 +14,14 @@ defmodule Applet.Tasks do
 
   def async(fun) do
     Task.Supervisor.async(__MODULE__, fn ->
-      Utils.run_safe(fun)
+      Utils.safe(fun)
     end)
   end
 
   def async(fun1, fun2) do
     Task.Supervisor.async(__MODULE__, fn ->
-      res1 = Utils.run_safe(fun1)
-      res2 = Utils.run_safe(fun2)
+      res1 = Utils.safe(fun1)
+      res2 = Utils.safe(fun2)
       {res1, res2}
     end)
   end

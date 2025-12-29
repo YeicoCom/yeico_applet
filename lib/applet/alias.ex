@@ -8,10 +8,10 @@ defmodule Applet.Alias do
       alias Applet.Shared
       alias Applet.Store
       alias Applet.Utils
-      alias Applet.Dets
       alias Applet.Tasks
       alias Applet.Start
       alias Applet.Alias
+      use Applet.Api
 
       require Logger
     end

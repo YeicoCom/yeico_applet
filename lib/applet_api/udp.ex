@@ -19,7 +19,7 @@ defmodule Applet.Api.Udp do
   def listen(ip, port, opts \\ []) do
     active = Keyword.get(opts, :active, false)
     ip = if is_binary(ip), do: Ip4.parse(ip), else: ip
-    opts = [:binary, ip: ip, active: active]
+    opts = [:binary, ip: ip, active: active, reuseaddr: true]
 
     with {:ok, socket} <- :gen_udp.open(port, opts),
          {:ok, {ip, port}} <- :inet.sockname(socket) do

@@ -1,6 +1,5 @@
 defmodule Applet do
   use Applet.Alias
-  alias Applet.Api.Bus
 
   @delay 1
   @times 4_000
@@ -64,21 +63,21 @@ defmodule Applet do
     spec = %{id: route, start: start, restart: :temporary}
     {:ok, pid} = Dynamic.start_child(spec)
     fun = fn -> [{^pid, _}] = Unique.lookup({:applet, route}) end
-    :ok = Utils.wait_success(@delay, @times, fun)
+    :ok = wait_success(@delay, @times, fun)
     {:ok, pid}
   end
 
   def stop!(route) do
-    :ok = Utils.kill_unique({:applet, route})
-    :ok = Utils.kill_multiple({:applet, route})
+    :ok = kill_unique({:applet, route})
+    :ok = kill_multiple({:applet, route})
     await!(route)
   end
 
   def await!(route) do
     fun = fn -> [] = Unique.lookup({:applet, route}) end
-    :ok = Utils.wait_success(@delay, @times, fun)
+    :ok = wait_success(@delay, @times, fun)
     fun = fn -> [] = Multiple.lookup({:applet, route}) end
-    :ok = Utils.wait_success(@delay, @times, fun)
+    :ok = wait_success(@delay, @times, fun)
   end
 
   def reboot!() do
@@ -198,7 +197,7 @@ defmodule Applet do
             utc = NaiveDateTime.utc_now()
             now = NaiveDateTime.add(utc, diff, :second)
             color = if colored, do: colors[type]
-            log = Utils.fmt_log(color, now, type, msg)
+            log = format_log(color, now, type, msg)
             write.(log)
             loop.(loop)
         end
@@ -207,5 +206,51 @@ defmodule Applet do
       loop.(loop)
     end)
     |> await.()
+  end
+
+  def format_log(color, dt, type, msg) when is_binary(msg) do
+    dt = NaiveDateTime.truncate(dt, :millisecond)
+
+    [
+      if(color, do: color, else: ""),
+      NaiveDateTime.to_iso8601(dt),
+      " ",
+      type |> Atom.to_string() |> String.upcase(),
+      " ",
+      msg,
+      if(color, do: IO.ANSI.reset(), else: ""),
+      "\n"
+    ]
+  end
+
+  def wait_success(period, times, fun) when period > 0 and times > 0 and is_function(fun, 0) do
+    last = times - 1
+
+    Stream.interval(period)
+    |> Stream.take(times)
+    |> Stream.with_index()
+    |> Stream.map(fn {_, i} -> {i, Utils.safe(fun)} end)
+    |> Stream.take_while(fn
+      {_, {:error, _}} -> true
+      {_, {:ok, _}} -> false
+    end)
+    |> Stream.take(-1)
+    |> Enum.to_list()
+    |> case do
+      [{^last, {:error, %{error: error, stack: stack}}}] -> reraise(error, stack)
+      _ -> :ok
+    end
+  end
+
+  def kill_unique(key) do
+    key
+    |> Unique.lookup()
+    |> Enum.each(&Utils.kill(elem(&1, 0)))
+  end
+
+  def kill_multiple(key) do
+    key
+    |> Multiple.lookup()
+    |> Enum.each(&Utils.kill(elem(&1, 0)))
   end
 end

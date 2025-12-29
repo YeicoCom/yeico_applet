@@ -1,7 +1,6 @@
-defmodule AppletTcpTest do
+defmodule Applet.TcpTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  use Applet.Api
 
   test "tcp accept works on closed client" do
     {:ok, server} = Tcp.listen("127.0.0.1", 0)

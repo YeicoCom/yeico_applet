@@ -1,9 +1,9 @@
 defmodule Applet.Api do
   defmacro __using__(_) do
     quote do
+      alias Applet.Api.Dets
       alias Applet.Api.Bus
       alias Applet.Api.Adb
-      alias Applet.Api.Ddb
       alias Applet.Api.Udb
       alias Applet.Api.Mdb
       alias Applet.Api.Tcp
@@ -16,6 +16,8 @@ defmodule Applet.Api do
 
   alias Applet.Utils
   alias Applet.Api.Bus
+  alias Applet.Api.Adb
+  require Logger
 
   def route(), do: call(:route)
   def entry(), do: call(:entry)
@@ -30,12 +32,13 @@ defmodule Applet.Api do
   def sleep(), do: Utils.sleep()
   def sleep(millis), do: Utils.sleep(millis)
   def pid(%Task{} = task), do: Utils.pid(task)
-  def kill(pid) when is_pid(pid), do: Utils.kill_pid(pid)
-  def kill(%Task{pid: pid}) when is_pid(pid), do: Utils.kill_pid(pid)
+  def kill(pid) when is_pid(pid), do: Utils.kill(pid)
+  def kill(%Task{pid: pid}) when is_pid(pid), do: Utils.kill(pid)
   def hostname(), do: Utils.hostname()
+  def hostname_f(), do: Utils.hostname_f()
   def resolve(host), do: Utils.resolve(host)
-  def safe(fun) when is_function(fun, 0), do: Utils.run_safe(fun)
-  def safe(fun, arg) when is_function(fun, 1), do: Utils.run_safe(fun, arg)
+  def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
+  def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
   def await(task = %Task{}), do: call({:await, task, :infinity})
   def await(task = %Task{}, toms), do: call({:await, task, toms})
@@ -43,7 +46,7 @@ defmodule Applet.Api do
   def await(fun, poll) when is_function(fun, 0) do
     Stream.interval(poll)
     |> Stream.take_while(fn _ ->
-      case Utils.run_safe(fun) do
+      case Utils.safe(fun) do
         {:ok, true} -> false
         _ -> true
       end
@@ -51,6 +54,16 @@ defmodule Applet.Api do
     |> Stream.take(-1)
     |> Enum.to_list()
     |> is_list()
+  end
+
+  def subget!(key, opts \\ []) do
+    Bus.subscribe!(key, Keyword.get(opts, :sarg))
+    Adb.get(key, Keyword.get(opts, :defv))
+  end
+
+  def putcast!(key, value) do
+    Adb.put(key, value)
+    Bus.broadcast!(key, value)
   end
 
   def async(fun) when is_function(fun, 0) do
@@ -70,12 +83,12 @@ defmodule Applet.Api do
   end
 
   def wrap(fun) when is_function(fun, 0) do
-    safe = fn -> Utils.run_safe(fun) |> log_unhandled() |> unwrap_safe() end
+    safe = fn -> Utils.safe(fun) |> log_unhandled() |> unwrap_safe() end
     wrap_async(safe)
   end
 
   def wrap(fun) when is_function(fun, 1) do
-    safe = fn arg -> Utils.run_safe(fun, arg) |> log_unhandled() |> unwrap_safe() end
+    safe = fn arg -> Utils.safe(fun, arg) |> log_unhandled() |> unwrap_safe() end
     wrap_async(safe)
   end
 
@@ -95,13 +108,13 @@ defmodule Applet.Api do
     spawn(wrap_async(entry))
   end
 
-  def evalf(route, binding \\ []) do
+  def evalf(route, argv \\ []) do
     code = Applet.load!(route)
-    evals(route, code, binding)
+    evals(route, code, argv)
   end
 
-  def evals(route, code, binding \\ []) do
-    {{result, binding}, diagnostics} =
+  def evals(route, code, argv \\ []) do
+    {{result, bindings}, diagnostics} =
       Code.with_diagnostics(fn ->
         api = Process.get(:__api__)
 
@@ -115,9 +128,11 @@ defmodule Applet.Api do
         # return is either the try or the rescue block
         # resulting expression in efter block is ignored
         try do
-          Code.eval_string(code, binding, file: route)
+          Code.eval_string(code, argv, file: route)
         rescue
-          error -> {{error, __STACKTRACE__}, []}
+          error -> {{:rescue, error, __STACKTRACE__}, []}
+        catch
+          error -> {{:catch, error, __STACKTRACE__}, []}
         after
           Process.put(:__api__, api)
         end
@@ -125,23 +140,30 @@ defmodule Applet.Api do
 
     # possition is row or {row, col}
     Enum.each(diagnostics, fn
-      %{severity: :warning, position: p, message: m, file: f} -> warn("#{f}:#{inspect(p)} #{m}")
-      %{severity: :error, position: p, message: m, file: f} -> error("#{f}:#{inspect(p)} #{m}")
+      %{severity: :warning, position: p, message: m, file: f} ->
+        Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
+        warn("#{f}:#{inspect(p)} compile warning #{m}")
+      %{severity: :error, position: p, message: m, file: f} ->
+        Logger.error(route: route, severity: :warning, position: p, message: m, file: f)
+        error("#{f}:#{inspect(p)} compile error #{m}")
     end)
 
     # too much error types to ensure full coverage
     case result do
-      {%CompileError{file: f, line: p, description: m}, _} ->
-        error("#{f}:#{p} #{m}")
+      {:rescue, ex, st} ->
+        Logger.error(route: route, rescue: ex, stack: st)
+        error("#{route}: #{inspect(ex)} #{inspect(st)}")
 
-      {ex = %{__exception__: true}, st} ->
+      {:catch, ex, st} ->
+        Logger.error(route: route, catch: ex, stack: st)
         error("#{route}: #{inspect(ex)} #{inspect(st)}")
 
       result ->
+        Logger.debug(route: route, result: result)
         info("#{route}: #{inspect(result)}")
     end
 
-    {result, binding |> Enum.into(%{})}
+    {result, bindings |> Enum.into(%{})}
   end
 
   # log with entry route
@@ -184,11 +206,11 @@ defmodule Applet.Api do
   end
 
   defp wrap_safe(fun) when is_function(fun, 0) do
-    fn -> Utils.run_safe(fun) |> log_unhandled() end
+    fn -> Utils.safe(fun) |> log_unhandled() end
   end
 
   defp wrap_safe(fun) when is_function(fun, 1) do
-    fn arg -> Utils.run_safe(fun, arg) |> log_unhandled() end
+    fn arg -> Utils.safe(fun, arg) |> log_unhandled() end
   end
 
   defp unwrap_safe({:ok, res}), do: res
@@ -201,13 +223,11 @@ defmodule Applet.Api do
     throw(error)
   end
 
-  defp log_unhandled(res1 = {:error, res2 = %{type: type, error: error, stack: stack}}) do
-    entry = entry()
+  defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
+    Logger.error(entry: entry(), route: route(), unhandled: type, error: error, stack: stack)
     debug("UNHANDLED #{type} error #{inspect(error)}")
     trace("UNHANDLED #{type} stack #{inspect(stack)}")
-    Bus.broadcast!(:unhandled, {entry, res2})
-    Bus.broadcast!({:unhandled, entry}, res2)
-    res1
+    res
   end
 
   defp log_unhandled(res), do: res

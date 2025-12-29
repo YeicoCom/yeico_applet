@@ -16,6 +16,6 @@ defmodule Applet.Start do
     true = Process.register(self(), __MODULE__)
     Applet.start()
     Applet.reboot!()
-    :timer.sleep(:infinity)
+    Process.sleep(:infinity)
   end
 end

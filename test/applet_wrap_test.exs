@@ -1,65 +1,24 @@
-defmodule AppletWrapTest do
+defmodule Applet.WrapTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  use Applet.Api
 
-  test "wrap fun/0" do
-    code = """
-    use Applet.Api
-    wrap1 = Api.wrap(fn -> raise "RAISE" end)
-    Adb.put(:wrap1, Api.safe(wrap1))
-    wrap2 = Api.wrap(fn -> throw "THROW" end)
-    Adb.put(:wrap2, Api.safe(wrap2))
-    wrap3 = Api.wrap(fn -> "OK" end)
-    Adb.put(:wrap3, Api.safe(wrap3))
-    """
-
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
-
-    Run.applet(code, fn %{route: route} ->
-      Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-      Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-      Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
-      assert_receive {{:logger, ^route, :info}, nil, msg}
-      assert msg == "Applet starting: applet_test.exs"
-      assert_receive {{:logger, ^route, :debug}, nil, msg}
-      assert msg =~ "UNHANDLED rescue error %RuntimeError"
-      assert_receive {{:logger, ^route, :trace}, nil, msg}
-      assert msg =~ "UNHANDLED rescue stack"
-      assert_receive {{:logger, ^route, :debug}, nil, msg}
-      assert msg =~ "UNHANDLED catch error"
-      assert_receive {{:logger, ^route, :trace}, nil, msg}
-      assert msg =~ "UNHANDLED catch stack"
-    end)
+  test "wrap log" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> spawn(Api.wrap(fn -> Api.warn("oops") end)) end)
+    Tester.assert_starts_with(route, :warn, "oops")
   end
 
-  test "wrap fun/1" do
-    code = """
-    use Applet.Api
-    wrap1 = Api.wrap(fn arg -> raise arg end)
-    Adb.put(:wrap1, Api.safe(wrap1, "RAISE"))
-    wrap2 = Api.wrap(fn arg -> throw arg end)
-    Adb.put(:wrap2, Api.safe(wrap2, "THROW"))
-    wrap3 = Api.wrap(fn arg -> arg end)
-    Adb.put(:wrap3, Api.safe(wrap3, "OK"))
-    """
+  test "wrap unhandled rescue" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> spawn(Api.wrap(fn -> raise "oops" end)) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED rescue error %RuntimeError{")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED rescue stack [")
+  end
 
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
-
-    Run.applet(code, fn %{route: route} ->
-      Wait.success(fn -> assert {:error, %{type: :rescue}} = Adb.get(:wrap1) end)
-      Wait.success(fn -> assert {:error, %{type: :catch}} = Adb.get(:wrap2) end)
-      Wait.success(fn -> assert {:ok, "OK"} = Adb.get(:wrap3) end)
-      assert_receive {{:logger, ^route, :info}, nil, msg}
-      assert msg == "Applet starting: applet_test.exs"
-      assert_receive {{:logger, ^route, :debug}, nil, msg}
-      assert msg =~ "UNHANDLED rescue error %RuntimeError"
-      assert_receive {{:logger, ^route, :trace}, nil, msg}
-      assert msg =~ "UNHANDLED rescue stack"
-      assert_receive {{:logger, ^route, :debug}, nil, msg}
-      assert msg =~ "UNHANDLED catch error"
-      assert_receive {{:logger, ^route, :trace}, nil, msg}
-      assert msg =~ "UNHANDLED catch stack"
-    end)
+  test "wrap unhandled catch" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> spawn(Api.wrap(fn -> throw "oops" end)) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error \"oops\"")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED catch stack [")
   end
 end

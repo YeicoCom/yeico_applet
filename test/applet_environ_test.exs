@@ -1,21 +1,22 @@
-defmodule AppletEvironTest do
+defmodule Applet.EnvironTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  use Applet.Api
 
-  test "environ" do
-    code = """
-    use Applet.Api
-    Adb.put(:path, Api.path())
-    Adb.put(:route, Api.route())
-    """
-
+  test "path" do
     home = System.get_env("HOME")
     path = "#{home}/yeico_applet/test/applets"
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.path() end)
+    Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
+    Tester.assert_starts_with(route, :info, "#{route}: \"#{path}\"")
+  end
 
-    Run.applet(code, fn %{route: route, name: _name} ->
-      Wait.success(fn -> assert path == Adb.get(:path) end)
-      Wait.success(fn -> assert route == Adb.get(:route) end)
-    end)
+  test "load" do
+    assert ":ok\n" = Applet.load!("test.exs")
+
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.load!("test.exs") end)
+    Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
+    Tester.assert_starts_with(route, :info, "#{route}: \":ok\\n\"")
   end
 end

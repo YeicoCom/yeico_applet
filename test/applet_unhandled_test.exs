@@ -1,73 +1,56 @@
-defmodule AppletUnhandledTest do
+defmodule Applet.UnhandledTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  use Applet.Api
 
-  # https://elixirforum.com/t/how-to-keep-the-code-eval-string-environment-on-async-execution/71285/2
-  test "unhandled on async" do
-    code = """
-    use Applet.Api
-    Api.async(fn -> raise "ASYNC" end)
-    """
-
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
-
-    Run.applet(code, fn _ ->
-      assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting: applet_test.exs"
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
-
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-    end)
+  test "applet unhandled raise" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> raise "oops" end)
+    Tester.assert_starts_with(route, :error, "#{route}: %RuntimeError{")
   end
 
-  test "unhandled on async2" do
-    code = """
-    use Applet.Api
-    Api.async(fn -> raise "ASYNC1" end, fn -> raise "ASYNC2" end)
-    """
-
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
-
-    Run.applet(code, fn _ ->
-      assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting: applet_test.exs"
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC1\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
-
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"ASYNC2\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
-
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-    end)
+  test "applet unhandled throw" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> throw "oops" end)
+    Tester.assert_starts_with(route, :error, "#{route}: \"oops\"")
   end
 
-  test "unhandled on defer" do
-    code = """
-    use Applet.Api
-    Api.async(fn -> Api.defer(fn -> raise "DEFER" end) end)
-    """
+  test "applet match error" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, "1 = 2")
+    Tester.assert_starts_with(route, :error, "#{route}: %MatchError{term: 2}")
+  end
 
-    Applet.subscribe!(:trace, "applet_test.exs", nil)
+  test "applet function clause error" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, "f = fn 1 -> 2 end; f.(2)")
+    Tester.assert_starts_with(route, :error, "#{route}: %FunctionClauseError{")
+  end
 
-    Run.applet(code, fn _ ->
-      assert_receive {{:logger, "applet_test.exs", :info}, nil, msg}
-      assert msg == "Applet starting: applet_test.exs"
-      assert_receive {{:logger, "applet_test.exs", :debug}, nil, msg}
-      assert msg == "UNHANDLED rescue error %RuntimeError{message: \"DEFER\"}"
-      assert_receive {{:logger, "applet_test.exs", :trace}, nil, msg}
+  test "async unhandled raise" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.async(fn -> raise "oops" end) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED rescue error %RuntimeError{")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED rescue stack [")
+  end
 
-      assert msg =~
-               "UNHANDLED rescue stack [{:elixir_eval, :__FILE__, 1, [file: ~c\"applet_test.exs\", line: 2]"
-    end)
+  test "async unhandled throw" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.async(fn -> throw "oops" end) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error \"oops\"")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED catch stack [")
+  end
+
+  test "async unhandled match error" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.async(fn -> 1 = 2 end) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED rescue error %MatchError{term: 2}")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED rescue stack [")
+  end
+
+  test "async unhandled function clause error" do
+    route = Tester.route(__MODULE__)
+    Tester.run(route, fn -> Api.async(fn -> f = fn 1 -> 2 end; f.(2) end) end)
+    Tester.assert_starts_with(route, :debug, "UNHANDLED rescue error %FunctionClauseError{")
+    Tester.assert_starts_with(route, :trace, "UNHANDLED rescue stack [")
   end
 end

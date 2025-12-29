@@ -1,27 +1,89 @@
-defmodule AppletAdbTest do
+defmodule Applet.AdbTest do
   use ExUnit.Case, async: false
   use Applet.Alias
-  use Applet.Api
 
-  test "adb" do
-    code = """
-    use Applet.Api
-    Adb.put(:a, "a")
-    Adb.put(:b, Adb.get())
-    Adb.update(fn m -> Map.put(m, :c, "c") end)
-    Adb.update(:d, "d", fn _ -> "D" end)
-    Adb.update(:e, "e", fn _ -> "E" end)
-    Adb.update(:e, "e", fn _ -> "E" end)
-    """
-
-    Run.applet(code, fn _ ->
-      Wait.success(fn -> assert "a" == Adb.get(:a) end)
-      Wait.success(fn -> assert %{a: "a"} == Adb.get(:b) end)
-      Wait.success(fn -> assert "c" == Adb.get(:c) end)
-      Wait.success(fn -> assert "d" == Adb.get(:d) end)
-      Wait.success(fn -> assert "E" == Adb.get(:e) end)
-      Adb.reset()
+  test "crud" do
+    test_empty = fn ->
+      # no reset here
       assert %{} == Adb.get()
-    end)
+      assert [] == Adb.keys()
+      assert [] == Adb.list()
+      assert nil == Adb.get(:key)
+      assert :def == Adb.get(:key, :def)
+      refute Adb.has_key?(:key)
+      assert nil == Adb.delete(:key)
+    end
+
+    test_put_one = fn ->
+      assert :ok == Adb.reset()
+      assert %{} == Adb.get()
+      assert :ok == Adb.put(:key, "value")
+      assert [:key] == Adb.keys()
+      assert [key: "value"] == Adb.list()
+      assert %{key: "value"} == Adb.get()
+      assert "value" == Adb.get(:key)
+      assert "value" == Adb.get(:key, :def)
+      assert Adb.has_key?(:key)
+    end
+
+    test_put_all = fn ->
+      assert :ok == Adb.reset()
+      assert %{} == Adb.get()
+      assert :ok == Adb.put(%{key: "value"})
+      assert [:key] == Adb.keys()
+      assert [key: "value"] == Adb.list()
+      assert %{key: "value"} == Adb.get()
+      assert "value" == Adb.get(:key)
+      assert "value" == Adb.get(:key, :def)
+      assert Adb.has_key?(:key)
+    end
+
+    test_key_updater = fn ->
+      assert :ok == Adb.reset()
+      assert %{} == Adb.get()
+      assert :ok == Adb.update(:key, "value0", fn _ -> "value1" end)
+      assert %{key: "value0"} == Adb.get()
+      assert :ok == Adb.update(:key, "value0", fn _ -> "value2" end)
+      assert %{key: "value2"} == Adb.get()
+      assert :ok == Adb.update(:key, "value0", fn _ -> "value3" end)
+      assert %{key: "value3"} == Adb.get()
+    end
+
+    test_map_updater = fn ->
+      assert :ok == Adb.reset()
+      assert %{} == Adb.get()
+      assert :ok == Adb.update(fn map -> Map.put(map, :key, "value1") end)
+      assert %{key: "value1"} == Adb.get()
+      assert :ok == Adb.update(fn map -> Map.put(map, :key, "value2") end)
+      assert %{key: "value2"} == Adb.get()
+    end
+
+    assert :ok == Adb.reset()
+
+    # empty
+    test_empty.()
+
+    # put one and reset
+    test_put_one.()
+    assert :ok == Adb.reset()
+    test_empty.()
+
+    # put one and put empty
+    test_put_one.()
+    assert :ok == Adb.put(%{})
+    test_empty.()
+
+    # put one and delete
+    test_put_one.()
+    assert "value" == Adb.delete(:key)
+    test_empty.()
+
+    # put all and reset
+    test_put_all.()
+    assert :ok == Adb.reset()
+    test_empty.()
+
+    test_map_updater.()
+    test_key_updater.()
   end
 end

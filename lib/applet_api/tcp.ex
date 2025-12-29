@@ -62,10 +62,10 @@ defmodule Applet.Api.Tcp do
   end
 
   def owner(%{socket: socket}, %Task{pid: pid}) do
-    :gen_tcp.controlling_process(socket, pid)
+    owner(%{socket: socket}, pid)
   end
 
-  def owner(%{socket: socket}, pid) do
+  def owner(%{socket: socket}, pid) when is_pid(pid) do
     :gen_tcp.controlling_process(socket, pid)
   end
 

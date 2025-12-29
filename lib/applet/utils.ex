@@ -3,13 +3,18 @@ defmodule Applet.Utils do
 
   def pid(%Task{pid: pid}), do: pid
 
-  def sleep(), do: :timer.sleep(:infinity)
+  def sleep(), do: Process.sleep(:infinity)
 
-  def sleep(millis), do: :timer.sleep(millis)
+  def sleep(millis), do: Process.sleep(millis)
 
   def hostname() do
     {:ok, host} = :inet.gethostname()
     to_string(host)
+  end
+
+  def hostname_f() do
+    {hostname, 0} = System.cmd("hostname", ["-f"])
+    hostname |> String.trim()
   end
 
   def resolve(host) do
@@ -26,12 +31,12 @@ defmodule Applet.Utils do
       ref = Process.monitor(pid)
 
       receive do
-        {:DOWN, ^ref, _, ^pid, _} -> run_safe(fun)
+        {:DOWN, ^ref, _, ^pid, _} -> safe(fun)
       end
     end)
   end
 
-  def run_safe(fun) when is_function(fun, 0) do
+  def safe(fun) when is_function(fun, 0) do
     try do
       {:ok, fun.()}
     rescue
@@ -41,7 +46,7 @@ defmodule Applet.Utils do
     end
   end
 
-  def run_safe(fun, arg) when is_function(fun, 1) do
+  def safe(fun, arg) when is_function(fun, 1) do
     try do
       {:ok, fun.(arg)}
     rescue
@@ -51,24 +56,12 @@ defmodule Applet.Utils do
     end
   end
 
-  def kill_unique(key) do
-    key
-    |> Unique.lookup()
-    |> Enum.each(&kill_pid(elem(&1, 0)))
-  end
+  def kill(%Task{pid: pid}), do: kill(pid)
 
-  def kill_multiple(key) do
-    key
-    |> Multiple.lookup()
-    |> Enum.each(&kill_pid(elem(&1, 0)))
-  end
-
-  def kill_pid(%Task{pid: pid}), do: kill_pid(pid)
-
-  def kill_pid(pid) when is_pid(pid) do
+  def kill(pid) when is_pid(pid) do
     Process.unlink(pid)
-    ref = Process.monitor(pid)
     Process.exit(pid, :kill)
+    ref = Process.monitor(pid)
 
     receive do
       {:DOWN, ^ref, _, ^pid, _} -> :ok
@@ -76,39 +69,5 @@ defmodule Applet.Utils do
 
     # not a reference
     # Process.demonitor(pid)
-  end
-
-  def wait_success(period, times, fun) when period > 0 and times > 0 and is_function(fun, 0) do
-    last = times - 1
-
-    Stream.interval(period)
-    |> Stream.take(times)
-    |> Stream.with_index()
-    |> Stream.map(fn {_, i} -> {i, Utils.run_safe(fun)} end)
-    |> Stream.take_while(fn
-      {_, {:error, _}} -> true
-      {_, {:ok, _}} -> false
-    end)
-    |> Stream.take(-1)
-    |> Enum.to_list()
-    |> case do
-      [{^last, {:error, %{error: error, stack: stack}}}] -> reraise(error, stack)
-      _ -> :ok
-    end
-  end
-
-  def fmt_log(color, dt, type, msg) when is_binary(msg) do
-    dt = NaiveDateTime.truncate(dt, :millisecond)
-
-    [
-      if(color, do: color, else: ""),
-      NaiveDateTime.to_iso8601(dt),
-      " ",
-      type |> Atom.to_string() |> String.upcase(),
-      " ",
-      msg,
-      if(color, do: IO.ANSI.reset(), else: ""),
-      "\n"
-    ]
   end
 end

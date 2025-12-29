@@ -29,6 +29,10 @@ defmodule Applet.Api.Adb do
     Agent.get(__MODULE__, &Map.get(&1, key, def))
   end
 
+  def put(map) do
+    Agent.update(__MODULE__, fn _ -> map end)
+  end
+
   def put(key, value) do
     Agent.update(__MODULE__, &Map.put(&1, key, value))
   end
