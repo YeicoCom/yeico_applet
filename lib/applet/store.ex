@@ -18,8 +18,8 @@ defmodule Applet.Store do
   def init(:args) do
     path = path()
     path |> Path.dirname() |> File.mkdir_p!()
-    Shared.put("applets:dets:store", path)
-    Logger.notice("Applet dets store #{path}")
+    Shared.put("applets:store", path)
+    Logger.notice("Applet store #{path}")
     Dets.open(path) # {:ok, table}
   end
 
