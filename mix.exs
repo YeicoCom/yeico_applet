@@ -7,6 +7,7 @@ defmodule Applet.MixProject do
       version: "0.1.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
+      test_ignore_filters: [&String.starts_with?(&1, "test/applets/")],
       deps: deps()
     ]
   end
