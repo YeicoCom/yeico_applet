@@ -56,8 +56,8 @@ defmodule Applet do
   def start!(route, opts \\ []) do
     code = Keyword.get(opts, :code)
     code = code || load!(route)
-    argv = Keyword.get(opts, :argv, [])
-    start = {Runner, :start_link, [route, code, argv]}
+    bindings = Keyword.get(opts, :bindings, [])
+    start = {Runner, :start_link, [route, code, bindings]}
     # temporary never restarted
     # dynamic supervisor requires but ignores id
     spec = %{id: route, start: start, restart: :temporary}
@@ -149,10 +149,10 @@ defmodule Applet do
   def run!(route, opts \\ []) do
     code = Keyword.get(opts, :code)
     code = code || load!(route)
-    argv = Keyword.get(opts, :argv, [])
-    run = fn -> start!(route, code: code, argv: argv) end
+    bindings = Keyword.get(opts, :bindings, [])
+    run = fn -> start!(route, code: code, bindings: bindings) end
     stop = Keyword.get(opts, :stop, true)
-    opts = Keyword.drop(opts, [:code, :argv])
+    opts = Keyword.drop(opts, [:code, :bindings])
     opts = Keyword.merge(opts, run: run, stop: stop)
     log(route, opts)
   end

@@ -108,12 +108,12 @@ defmodule Applet.Api do
     spawn(wrap_async(entry))
   end
 
-  def evalf(route, argv \\ []) do
+  def evalf(route, bindings \\ []) do
     code = Applet.load!(route)
-    evals(route, code, argv)
+    evals(route, code, bindings)
   end
 
-  def evals(route, code, argv \\ []) do
+  def evals(route, code, bindings \\ []) do
     {{result, bindings}, diagnostics} =
       Code.with_diagnostics(fn ->
         api = Process.get(:__api__)
@@ -128,7 +128,7 @@ defmodule Applet.Api do
         # return is either the try or the rescue block
         # resulting expression in efter block is ignored
         try do
-          Code.eval_string(code, argv, file: route)
+          Code.eval_string(code, bindings, file: route)
         rescue
           error -> {{:rescue, error, __STACKTRACE__}, []}
         catch

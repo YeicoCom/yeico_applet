@@ -18,7 +18,7 @@ defmodule Tester do
 
   def run(route, fun) when is_function(fun, 0) do
     Applet.start()
-    Applet.start!(route, code: "fun.()", argv: [fun: fun])
+    Applet.start!(route, code: "fun.()", bindings: [fun: fun])
   end
 
   def assert_starts_with(route, level, prefix, toms \\ 1_000) do

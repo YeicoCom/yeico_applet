@@ -3,8 +3,8 @@ defmodule Applet.EnvironTest do
   use Applet.Alias
 
   test "path" do
-    home = System.get_env("HOME")
-    path = "#{home}/yeico_applet/test/applets"
+    pwd = System.get_env("PWD")
+    path = "#{pwd}/test/applets"
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> Api.path() end)
     Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
