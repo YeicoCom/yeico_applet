@@ -16,11 +16,15 @@ defmodule Applet.Store do
   def lookup(key), do: GenServer.call(__MODULE__, {:lookup, key})
 
   def init(:args) do
-    table = Application.get_env(:applet, :store)
-    table |> Path.dirname() |> File.mkdir_p!()
-    Shared.put("applets:dets:store", table)
-    Logger.notice("Applet dets store #{table}")
-    Dets.open(table) # {:ok, table}
+    path = path()
+    path |> Path.dirname() |> File.mkdir_p!()
+    Shared.put("applets:dets:store", path)
+    Logger.notice("Applet dets store #{path}")
+    Dets.open(path) # {:ok, table}
+  end
+
+  def path() do
+    Application.get_env(:applet, :store)
   end
 
   def handle_call(:list, _from, table) do
