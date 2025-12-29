@@ -1,4 +1,4 @@
 import Config
 
-config :applet, Applet.Store, table: Path.absname("store_test.dets")
-config :applet, Applet, path: Path.absname("test/applets")
+config :applet, path: Path.absname("test/applets")
+config :applet, store: Path.absname("store_test.dets")

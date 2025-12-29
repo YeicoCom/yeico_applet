@@ -15,8 +15,7 @@ defmodule Applet do
   end
 
   def path() do
-    config = Application.get_env(:applet, __MODULE__)
-    path = config[:path] |> Path.expand()
+    path = Application.get_env(:applet, :path)
     Shared.get("applets:path", path)
   end
 

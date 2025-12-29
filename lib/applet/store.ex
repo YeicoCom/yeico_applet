@@ -16,7 +16,7 @@ defmodule Applet.Store do
   def lookup(key), do: GenServer.call(__MODULE__, {:lookup, key})
 
   def init(:args) do
-    table = Application.get_env(:applet, __MODULE__)[:table]
+    table = Application.get_env(:applet, :store)
     table |> Path.dirname() |> File.mkdir_p!()
     Shared.put("applets:dets:store", table)
     Logger.notice("Applet dets store #{table}")
