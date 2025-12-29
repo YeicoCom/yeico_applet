@@ -3,7 +3,7 @@ defmodule Applet.DetsTest do
   use Applet.Alias
 
   test "crud" do
-    path = Path.absname("dets_test.dets")
+    path = Path.expand("dets_test.dets")
     File.rm_rf!(path)
     {:ok, table} = Dets.open(path)
 
