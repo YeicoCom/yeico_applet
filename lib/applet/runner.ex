@@ -10,9 +10,10 @@ defmodule Applet.Runner do
     :ok = Applet.stop!(route)
     Unique.register!({:applet, route}, nil)
     Multiple.register!(:applet, route)
-    start = {Task.Supervisor, :start_link, []}
-    spec = %{id: {route, :tasks}, start: start, restart: :temporary}
+    spec = {Task.Supervisor, name: {:via, Registry, {Unique, {:tasks, route}}}}
     {:ok, tasks} = Dynamic.start_child(spec)
+    # terminate_child deletes spec for temporary children
+    Utils.defer(fn -> Dynamic.terminate_child(tasks) end)
 
     api =
       fn

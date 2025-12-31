@@ -57,7 +57,7 @@ defmodule Applet do
     code = code || load!(route)
     bindings = Keyword.get(opts, :bindings, [])
     start = {Runner, :start_link, [route, code, bindings]}
-    # temporary never restarted
+    # temporary never restarted, defaults to worker
     # dynamic supervisor requires but ignores id
     spec = %{id: route, start: start, restart: :temporary}
     {:ok, pid} = Dynamic.start_child(spec)
@@ -76,6 +76,8 @@ defmodule Applet do
     fun = fn -> [] = Unique.lookup({:applet, route}) end
     :ok = wait_success(@delay, @times, fun)
     fun = fn -> [] = Multiple.lookup({:applet, route}) end
+    :ok = wait_success(@delay, @times, fun)
+    fun = fn -> [] = Unique.lookup({:tasks, route}) end
     :ok = wait_success(@delay, @times, fun)
   end
 
