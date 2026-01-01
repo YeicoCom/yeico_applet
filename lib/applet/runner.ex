@@ -8,9 +8,8 @@ defmodule Applet.Runner do
 
   defp init(%{route: route, code: code, bindings: bindings}) do
     :ok = Applet.stop!(route)
-    Unique.register!({:applet, route}, nil)
-    Multiple.register!(:applet, route)
-    spec = {Task.Supervisor, name: {:via, Registry, {Unique, {:tasks, route}}}}
+    Unique.register!({:applet_main, route}, nil)
+    spec = {Task.Supervisor, name: {:via, Registry, {Unique, {:applet_super, route}}}}
     {:ok, tasks} = Dynamic.start_child(spec)
     # terminate_child deletes spec for temporary children
     Utils.defer(fn -> Dynamic.terminate_child(tasks) end)
@@ -28,7 +27,7 @@ defmodule Applet.Runner do
 
         {:async, fun} ->
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet, route}, :async)
+            Multiple.register!({:applet_task, route}, :async)
             fun.()
           end)
       end
@@ -43,7 +42,7 @@ defmodule Applet.Runner do
     Api.info("Applet starting: #{route}")
     Api.defer(fn -> Api.info("Applet exited: #{route}") end)
     {result, binding} = Api.evals(route, code, bindings)
-    Unique.update!({:applet, route}, {result, binding})
+    Unique.update!({:applet_main, route}, {result, binding})
     Process.sleep(:infinity)
   end
 end

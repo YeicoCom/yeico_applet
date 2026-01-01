@@ -61,23 +61,23 @@ defmodule Applet do
     # dynamic supervisor requires but ignores id
     spec = %{id: route, start: start, restart: :temporary}
     {:ok, pid} = Dynamic.start_child(spec)
-    fun = fn -> [{^pid, _}] = Unique.lookup({:applet, route}) end
+    fun = fn -> [{^pid, _}] = Unique.lookup({:applet_main, route}) end
     :ok = wait_success(@delay, @times, fun)
     {:ok, pid}
   end
 
   def stop!(route) do
-    :ok = kill_unique({:applet, route})
-    :ok = kill_multiple({:applet, route})
+    :ok = kill_unique({:applet_main, route})
+    :ok = kill_multiple({:applet_task, route})
     await!(route)
   end
 
   def await!(route) do
-    fun = fn -> [] = Unique.lookup({:applet, route}) end
+    fun = fn -> [] = Unique.lookup({:applet_main, route}) end
     :ok = wait_success(@delay, @times, fun)
-    fun = fn -> [] = Multiple.lookup({:applet, route}) end
+    fun = fn -> [] = Unique.lookup({:applet_super, route}) end
     :ok = wait_success(@delay, @times, fun)
-    fun = fn -> [] = Unique.lookup({:tasks, route}) end
+    fun = fn -> [] = Multiple.lookup({:applet_task, route}) end
     :ok = wait_success(@delay, @times, fun)
   end
 
@@ -125,6 +125,20 @@ defmodule Applet do
     Bus.subscribe!({:logger, route, :info}, sargs)
     Bus.subscribe!({:logger, route, :warn}, sargs)
     Bus.subscribe!({:logger, route, :error}, sargs)
+  end
+
+  def broadcast!(route, type, msg, logger \\ false) do
+    if logger do
+      case type do
+        # Logger has no trace level
+        :error -> Logger.error(msg)
+        :warn -> Logger.warning(msg)
+        :info -> Logger.info(msg)
+        :debug -> Logger.debug(msg)
+      end
+    end
+    Bus.broadcast!(:logger, {route, type, msg})
+    Bus.broadcast!({:logger, route, type}, msg)
   end
 
   def colors() do
