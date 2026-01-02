@@ -36,11 +36,14 @@ defmodule Applet.Runner do
     Process.put(:__api__, api)
 
     unless Applet.started?() do
-      Api.info("Applet waiting #{route}")
+      Logger.notice("Applet waiting: #{route}")
+      Api.info("Applet waiting: #{route}")
       Applet.await()
     end
 
+    Logger.notice("Applet starting: #{route}")
     Api.info("Applet starting: #{route}")
+    Api.defer(fn -> Logger.notice("Applet exited: #{route}") end)
     Api.defer(fn -> Api.info("Applet exited: #{route}") end)
     {result, binding} = Api.evals(route, code, bindings)
     Unique.update!({:applet_main, route}, {result, binding})

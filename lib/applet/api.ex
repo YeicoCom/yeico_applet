@@ -168,9 +168,7 @@ defmodule Applet.Api do
 
   # log with entry route
   defp log(type, msg) when is_binary(msg) do
-    entry = entry()
-    Bus.broadcast!(:logger, {entry, type, msg})
-    Bus.broadcast!({:logger, entry, type}, msg)
+    Applet.broadcast!(entry(), type, msg)
     # for |> Api.trace()
     msg
   end

@@ -53,6 +53,7 @@ defmodule Applet do
   # spawn_link only to ensure proper cleanup
   # do not change the pwd or any other environment
   def start!(route, opts \\ []) do
+    Logger.notice("Applet start!: #{route}")
     code = Keyword.get(opts, :code)
     code = code || load!(route)
     bindings = Keyword.get(opts, :bindings, [])
@@ -127,16 +128,7 @@ defmodule Applet do
     Bus.subscribe!({:logger, route, :error}, sargs)
   end
 
-  def broadcast!(route, type, msg, logger \\ false) do
-    if logger do
-      case type do
-        # Logger has no trace level
-        :error -> Logger.error(msg)
-        :warn -> Logger.warning(msg)
-        :info -> Logger.info(msg)
-        :debug -> Logger.debug(msg)
-      end
-    end
+  def broadcast!(route, type, msg) do
     Bus.broadcast!(:logger, {route, type, msg})
     Bus.broadcast!({:logger, route, type}, msg)
   end
