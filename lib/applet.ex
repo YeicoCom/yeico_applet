@@ -95,11 +95,11 @@ defmodule Applet do
     list |> Enum.each(fn {_, route} -> start!(route) end)
   end
 
-  def reset!() do
+  def reset!(except \\ nil) do
     list = stored()
-    list |> Enum.each(fn route -> :ok = Store.delete(route) end)
+    list |> Enum.filter(fn route -> route != except end) |> Enum.each(fn route -> :ok = Store.delete(route) end)
     list = started()
-    list |> Enum.each(fn {_, route} -> stop!(route) end)
+    list |> Enum.filter(fn {_, route} -> route != except end) |> Enum.each(fn {_, route} -> stop!(route) end)
   end
 
   def started() do
