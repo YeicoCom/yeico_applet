@@ -23,5 +23,6 @@ applet-*.tar
 /tmp/
 
 *.dets
+*.cubdb
 
 /applets/

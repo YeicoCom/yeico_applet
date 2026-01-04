@@ -12,7 +12,6 @@ defmodule Applet.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
@@ -20,9 +19,10 @@ defmodule Applet.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
+  # https://elixirforum.com/t/clarification-on-dets-nerves-issue-mentioned-at-elixirconf/10145
   defp deps do
     [
+      {:cubdb, "2.0.2"}
     ]
   end
 end

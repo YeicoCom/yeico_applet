@@ -42,7 +42,7 @@ defmodule Applet do
     # no sense to individualize applet path
     # since there is a single statics folder
     # nil content to read code on load
-    :ok = Store.upsert(route, nil)
+    :ok = Store.put(route, nil)
   end
 
   def delete!(route) do
