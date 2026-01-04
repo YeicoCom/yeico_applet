@@ -11,6 +11,7 @@ defmodule Applet.Api do
       alias Applet.Api.Net
       alias Applet.Api.Ip4
       alias Applet.Api
+      require Logger
     end
   end
 
