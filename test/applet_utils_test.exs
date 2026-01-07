@@ -18,7 +18,7 @@ defmodule Applet.UtilsTest do
   end
 
   test "resolve" do
-    assert {:ok, "127.0.0.1"} == Utils.resolve(Utils.hostname())
+    assert {:ok, "127.0.0.1"} == Utils.resolve("localhost")
   end
 
   test "defer self" do
@@ -36,14 +36,30 @@ defmodule Applet.UtilsTest do
 
   test "safe 0" do
     assert {:ok, "oops"} == Utils.safe(fn -> "oops" end)
-    assert match?({:error, %{type: :rescue, error: %RuntimeError{message: "oops"}, stack: [_ | _]}}, Utils.safe(fn -> raise "oops" end))
-    assert match?({:error, %{type: :catch, error: "oops", stack: [_ | _]}}, Utils.safe(fn -> throw "oops" end))
+
+    assert match?(
+             {:error, %{type: :rescue, error: %RuntimeError{message: "oops"}, stack: [_ | _]}},
+             Utils.safe(fn -> raise "oops" end)
+           )
+
+    assert match?(
+             {:error, %{type: :catch, error: "oops", stack: [_ | _]}},
+             Utils.safe(fn -> throw("oops") end)
+           )
   end
 
   test "safe 1" do
     assert {:ok, "oops"} == Utils.safe(fn arg -> arg end, "oops")
-    assert match?({:error, %{type: :rescue, error: %RuntimeError{message: "oops"}, stack: [_ | _]}}, Utils.safe(fn arg -> raise arg end, "oops"))
-    assert match?({:error, %{type: :catch, error: "oops", stack: [_ | _]}}, Utils.safe(fn arg -> throw arg end, "oops"))
+
+    assert match?(
+             {:error, %{type: :rescue, error: %RuntimeError{message: "oops"}, stack: [_ | _]}},
+             Utils.safe(fn arg -> raise arg end, "oops")
+           )
+
+    assert match?(
+             {:error, %{type: :catch, error: "oops", stack: [_ | _]}},
+             Utils.safe(fn arg -> throw(arg) end, "oops")
+           )
   end
 
   test "kill pid" do
