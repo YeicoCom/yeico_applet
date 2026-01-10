@@ -67,6 +67,26 @@ defmodule Applet.Api do
     Bus.broadcast!(key, value)
   end
 
+  def loop(delay_ms, init) when is_function(init, 0) do
+    fun = fn loop ->
+      async(init) |> await() |> warn()
+      flush(delay_ms)
+      loop.(loop)
+    end
+
+    async(fun, fun)
+  end
+
+  def loop(delay_ms, init, arg) when is_function(init, 1) do
+    fun = fn loop ->
+      async(init, arg) |> await() |> warn()
+      flush(delay_ms)
+      loop.(loop)
+    end
+
+    async(fun, fun)
+  end
+
   def flush(toms \\ 0) when is_integer(toms) do
     receive do
       _ -> flush(toms)
