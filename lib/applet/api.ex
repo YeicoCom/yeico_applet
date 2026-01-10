@@ -67,6 +67,14 @@ defmodule Applet.Api do
     Bus.broadcast!(key, value)
   end
 
+  def flush(toms \\ 0) when is_integer(toms) do
+    receive do
+      _ -> flush(toms)
+    after
+      toms -> :ok
+    end
+  end
+
   def async(fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
     call({:async, wrap_async(safe)})
@@ -144,6 +152,7 @@ defmodule Applet.Api do
       %{severity: :warning, position: p, message: m, file: f} ->
         Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
         warn("#{f}:#{inspect(p)} compile warning #{m}")
+
       %{severity: :error, position: p, message: m, file: f} ->
         Logger.error(route: route, severity: :warning, position: p, message: m, file: f)
         error("#{f}:#{inspect(p)} compile error #{m}")
