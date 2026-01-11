@@ -63,8 +63,9 @@ defmodule Applet.Api do
   end
 
   def putcast!(key, value) do
+    prev = Adb.get(key)
     Adb.put(key, value)
-    Bus.broadcast!(key, value)
+    if prev != value, do: Bus.broadcast!(key, value)
   end
 
   def loop(delay_ms, init) when is_function(init, 0) do
