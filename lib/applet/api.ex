@@ -122,7 +122,9 @@ defmodule Applet.Api do
     wrap_async(safe)
   end
 
-  def defer(fun), do: defer(self(), fun)
+  def defer(fun) when is_function(fun, 0), do: defer(self(), fun)
+
+  def defer(fun, arg) when is_function(fun, 1), do: defer(self(), fn -> fun.(arg) end)
 
   def defer(pid, fun) when is_pid(pid) and is_function(fun, 0) do
     safe = wrap_safe(fun)
@@ -137,6 +139,9 @@ defmodule Applet.Api do
 
     spawn(wrap_async(entry))
   end
+
+  def defer(pid, fun, arg) when is_pid(pid) and is_function(fun, 1),
+    do: defer(pid, fn -> fun.(arg) end)
 
   def evalf(route, bindings \\ []) do
     code = Applet.load!(route)

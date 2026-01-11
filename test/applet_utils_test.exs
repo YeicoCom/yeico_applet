@@ -27,10 +27,23 @@ defmodule Applet.UtilsTest do
     assert_receive :defer
   end
 
+  test "defer self arg" do
+    self = self()
+    spawn(fn -> Utils.defer(fn msg -> send(self, msg) end, :defer) end)
+    assert_receive :defer
+  end
+
   test "defer pid" do
     self = self()
     pid = spawn(fn -> :nop end)
     Utils.defer(pid, fn -> send(self, :defer) end)
+    assert_receive :defer
+  end
+
+  test "defer pid arg" do
+    self = self()
+    pid = spawn(fn -> :nop end)
+    Utils.defer(pid, fn msg -> send(self, msg) end, :defer)
     assert_receive :defer
   end
 

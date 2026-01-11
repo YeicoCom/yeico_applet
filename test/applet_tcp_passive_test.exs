@@ -3,7 +3,6 @@ defmodule Applet.TcpPassiveTest do
   use Applet.Alias
 
   test "tcp/passive applet" do
-
     Bus.subscribe!(:port)
     Bus.subscribe!(:closed)
 
@@ -32,18 +31,29 @@ defmodule Applet.TcpPassiveTest do
       accept.(accept, server)
     end)
 
-    port = receive do {:port, nil, port} -> port end
+    port =
+      receive do
+        {:port, nil, port} -> port
+      end
 
     {:ok, client} = Tcp.connect("127.0.0.1", port, line: true)
     :ok = Tcp.write(client, "ping\n")
     {:ok, "ping\n"} = Tcp.read(client)
     :ok = Tcp.close(client)
-    assert :closed == (receive do {:closed, nil, %{}} -> :closed end)
 
-    {:ok, client} = Tcp.connect({127,0,0,1}, port, line: true)
+    assert :closed ==
+             (receive do
+                {:closed, nil, %{}} -> :closed
+              end)
+
+    {:ok, client} = Tcp.connect({127, 0, 0, 1}, port, line: true)
     :ok = Tcp.write(client, "ping\n")
     {:ok, "ping\n"} = Tcp.read(client)
     :ok = Tcp.close(client)
-    assert :closed == (receive do {:closed, nil, %{}} -> :closed end)
+
+    assert :closed ==
+             (receive do
+                {:closed, nil, %{}} -> :closed
+              end)
   end
 end

@@ -3,7 +3,6 @@ defmodule Applet.UdpActiveTest do
   use Applet.Alias
 
   test "udp/active applet" do
-
     Bus.subscribe!(:port)
 
     serve = fn loop, server ->
@@ -24,14 +23,17 @@ defmodule Applet.UdpActiveTest do
       :ok = Udp.owner(server, task)
     end)
 
-    port = receive do {:port, nil, port} -> port end
+    port =
+      receive do
+        {:port, nil, port} -> port
+      end
 
     {:ok, client} = Udp.connect("127.0.0.1", port)
     :ok = Udp.write(client, "ping\n")
     {:ok, {_, _, "ping\n"}} = Udp.read(client)
     :ok = Udp.close(client)
 
-    {:ok, client} = Udp.connect({127,0,0,1}, port)
+    {:ok, client} = Udp.connect({127, 0, 0, 1}, port)
     :ok = Udp.write(client, "ping\n")
     {:ok, {_, _, "ping\n"}} = Udp.read(client)
     :ok = Udp.close(client)

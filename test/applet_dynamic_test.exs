@@ -7,7 +7,12 @@ defmodule Applet.DynamicTest do
     route = Tester.route(__MODULE__)
     pid = self()
     Tester.run(route, fn -> send(pid, :inside) end)
-    assert :inside == (receive do :inside -> :inside end)
+
+    assert :inside ==
+             (receive do
+                :inside -> :inside
+              end)
+
     assert active + 2 == DynamicSupervisor.count_children(Dynamic).active
     assert 1 == length(Unique.lookup({:applet_super, route}))
     Applet.stop!(route)

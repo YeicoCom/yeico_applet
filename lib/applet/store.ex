@@ -51,7 +51,7 @@ defmodule Applet.Store do
   end
 
   defp keys(table) do
-    list(table) |> Enum.map(fn {k,_} -> k end)
+    list(table) |> Enum.map(fn {k, _} -> k end)
   end
 
   defp list(table) do

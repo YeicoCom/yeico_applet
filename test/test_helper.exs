@@ -26,9 +26,10 @@ defmodule Tester do
       {{:logger, ^route, ^level}, sarg, barg} ->
         assert is_nil(sarg)
         assert String.starts_with?(barg, prefix)
-      after toms ->
+    after
+      toms ->
         Logger.warning(timeout: route, level: level, messages: Process.info(self(), :messages))
-        throw {:timeout, toms}
+        throw({:timeout, toms})
     end
   end
 end

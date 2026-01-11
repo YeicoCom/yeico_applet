@@ -23,7 +23,9 @@ defmodule Applet.Utils do
     end
   end
 
-  def defer(fun), do: defer(self(), fun)
+  def defer(fun) when is_function(fun, 0), do: defer(self(), fun)
+
+  def defer(fun, arg) when is_function(fun, 1), do: defer(self(), fn -> fun.(arg) end)
 
   def defer(pid, fun) when is_pid(pid) and is_function(fun, 0) do
     # spawn to avoid sudden death
@@ -35,6 +37,9 @@ defmodule Applet.Utils do
       end
     end)
   end
+
+  def defer(pid, fun, arg) when is_pid(pid) and is_function(fun, 1),
+    do: defer(pid, fn -> fun.(arg) end)
 
   def safe(fun) when is_function(fun, 0) do
     try do
