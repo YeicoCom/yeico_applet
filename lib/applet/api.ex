@@ -204,7 +204,8 @@ defmodule Applet.Api do
 
   # log with entry route
   defp log(type, msg) when is_binary(msg) do
-    Applet.broadcast!(entry(), type, msg)
+    line = "#{route()} #{inspect(self())} #{msg}"
+    Applet.broadcast!(entry(), type, line)
     # for |> Api.trace()
     msg
   end

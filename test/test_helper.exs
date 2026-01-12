@@ -21,11 +21,11 @@ defmodule Tester do
     Applet.start!(route, code: "fun.()", bindings: [fun: fun])
   end
 
-  def assert_starts_with(route, level, prefix, toms \\ 1_000) do
+  def assert_contains(route, level, prefix, toms \\ 1_000) do
     receive do
       {{:logger, ^route, ^level}, sarg, barg} ->
         assert is_nil(sarg)
-        assert String.starts_with?(barg, prefix)
+        assert String.contains?(barg, prefix)
     after
       toms ->
         Logger.warning(timeout: route, level: level, messages: Process.info(self(), :messages))

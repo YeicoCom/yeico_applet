@@ -7,8 +7,8 @@ defmodule Applet.EnvironTest do
     path = "#{pwd}/test/applets"
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> Api.path() end)
-    Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
-    Tester.assert_starts_with(route, :info, "#{route}: \"#{path}\"")
+    Tester.assert_contains(route, :info, "Applet starting: #{route}")
+    Tester.assert_contains(route, :info, "#{route}: \"#{path}\"")
   end
 
   test "load" do
@@ -16,7 +16,7 @@ defmodule Applet.EnvironTest do
 
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> Api.load!("ok.exs") end)
-    Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
-    Tester.assert_starts_with(route, :info, "#{route}: \":ok\\n\"")
+    Tester.assert_contains(route, :info, "Applet starting: #{route}")
+    Tester.assert_contains(route, :info, "#{route}: \":ok\\n\"")
   end
 end
