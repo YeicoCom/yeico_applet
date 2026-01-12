@@ -21,11 +21,40 @@ defmodule Tester do
     Applet.start!(route, code: "fun.()", bindings: [fun: fun])
   end
 
-  def assert_contains(route, level, prefix, toms \\ 1_000) do
+  def assert_starts_with(route, level, prefix, toms \\ 1_000) do
     receive do
       {{:logger, ^route, ^level}, sarg, barg} ->
         assert is_nil(sarg)
-        assert String.contains?(barg, prefix)
+        [_route, _pid, msg] = String.split(barg, " ", parts: 3)
+        assert String.starts_with?(msg, prefix)
+    after
+      toms ->
+        Logger.warning(timeout: route, level: level, messages: Process.info(self(), :messages))
+        throw({:timeout, toms})
+    end
+  end
+
+  def assert_contains(route, level, substr, toms \\ 1_000) do
+    receive do
+      {{:logger, ^route, ^level}, sarg, barg} ->
+        assert is_nil(sarg)
+        [_route, _pid, msg] = String.split(barg, " ", parts: 3)
+        assert String.contains?(msg, substr)
+    after
+      toms ->
+        Logger.warning(timeout: route, level: level, messages: Process.info(self(), :messages))
+        throw({:timeout, toms})
+    end
+  end
+
+  def assert_match(route, level, regex, toms \\ 1_000) do
+    regex = if is_binary(regex), do: Regex.compile!(regex), else: regex
+
+    receive do
+      {{:logger, ^route, ^level}, sarg, barg} ->
+        assert is_nil(sarg)
+        [_route, _pid, msg] = String.split(barg, " ", parts: 3)
+        assert String.match?(msg, regex)
     after
       toms ->
         Logger.warning(timeout: route, level: level, messages: Process.info(self(), :messages))

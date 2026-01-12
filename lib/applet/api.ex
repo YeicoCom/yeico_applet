@@ -151,7 +151,7 @@ defmodule Applet.Api do
   def evals(route, code, bindings \\ []) do
     {{result, bindings}, diagnostics} =
       Code.with_diagnostics(fn ->
-        api = Process.get(:__api__)
+        %{api: api} = ctx = get_ctx()
 
         unless route == route() do
           Process.put(:__api__, fn
@@ -169,7 +169,7 @@ defmodule Applet.Api do
         catch
           error -> {{:catch, error, __STACKTRACE__}, []}
         after
-          Process.put(:__api__, api)
+          put_ctx(ctx)
         end
       end)
 
@@ -188,11 +188,11 @@ defmodule Applet.Api do
     case result do
       {:rescue, ex, st} ->
         Logger.error(route: route, rescue: ex, stack: st)
-        error("#{route}: #{inspect(ex)} #{inspect(st)}")
+        error("#{route} rescue: #{inspect(ex)} stack: #{inspect(st)}")
 
       {:catch, ex, st} ->
         Logger.error(route: route, catch: ex, stack: st)
-        error("#{route}: #{inspect(ex)} #{inspect(st)}")
+        error("#{route} catch: #{inspect(ex)} stack: #{inspect(st)}")
 
       result ->
         Logger.debug(route: route, result: result)
@@ -200,6 +200,37 @@ defmodule Applet.Api do
     end
 
     {result, bindings |> Enum.into(%{})}
+  end
+
+  # capture context for late wrapping
+  def wrapper() do
+    ctx = get_ctx()
+
+    fn
+      fun when is_function(fun, 0) ->
+        fn ->
+          ptx = get_ctx()
+          put_ctx(ctx)
+
+          try do
+            fun.()
+          after
+            put_ctx(ptx)
+          end
+        end
+
+      fun when is_function(fun, 1) ->
+        fn arg ->
+          ptx = get_ctx()
+          put_ctx(ctx)
+
+          try do
+            fun.(arg)
+          after
+            put_ctx(ptx)
+          end
+        end
+    end
   end
 
   # log with entry route
@@ -218,26 +249,24 @@ defmodule Applet.Api do
 
   defp call(args), do: apply(Process.get(:__api__), [args])
 
-  defp wrap_async(fun) when is_function(fun, 0) do
+  # https://elixirforum.com/t/how-to-keep-the-code-eval-string-environment-on-async-execution/71285
+  defp get_ctx() do
     env = Process.get({:elixir, :eval_env})
     api = Process.get(:__api__)
+    %{env: env, api: api}
+  end
 
-    fn ->
-      Process.put({:elixir, :eval_env}, env)
-      Process.put(:__api__, api)
-      fun.()
-    end
+  defp put_ctx(%{env: env, api: api}) do
+    Process.put({:elixir, :eval_env}, env)
+    Process.put(:__api__, api)
+  end
+
+  defp wrap_async(fun) when is_function(fun, 0) do
+    wrapper().(fun)
   end
 
   defp wrap_async(fun) when is_function(fun, 1) do
-    env = Process.get({:elixir, :eval_env})
-    api = Process.get(:__api__)
-
-    fn arg ->
-      Process.put({:elixir, :eval_env}, env)
-      Process.put(:__api__, api)
-      fun.(arg)
-    end
+    wrapper().(fun)
   end
 
   defp wrap_safe(fun) when is_function(fun, 0) do
@@ -254,8 +283,8 @@ defmodule Applet.Api do
     reraise error, stack
   end
 
-  defp unwrap_safe({:error, %{type: :catch, error: error, stack: _stack}}) do
-    throw(error)
+  defp unwrap_safe({:error, %{type: :catch, error: error, stack: stack}}) do
+    throw(%{error: error, stack: stack})
   end
 
   defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
