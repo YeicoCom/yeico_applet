@@ -86,4 +86,11 @@ defmodule Applet.AdbTest do
     test_map_updater.()
     test_key_updater.()
   end
+
+  test "replace for putcast!" do
+    assert :ok == Adb.reset()
+    assert :ok == Adb.put(:key, 1)
+    assert 1 == Adb.replace(:key, 2)
+    assert 2 == Adb.replace(:key, 3)
+  end
 end

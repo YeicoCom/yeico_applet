@@ -63,8 +63,7 @@ defmodule Applet.Api do
   end
 
   def putcast!(key, value) do
-    prev = Adb.get(key)
-    Adb.put(key, value)
+    prev = Adb.replace(key, value)
     if prev != value, do: Bus.broadcast!(key, value)
   end
 

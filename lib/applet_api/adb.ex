@@ -29,12 +29,19 @@ defmodule Applet.Api.Adb do
     Agent.get(__MODULE__, &Map.get(&1, key, def))
   end
 
-  def put(map) do
+  def put(map) when is_map(map) do
     Agent.update(__MODULE__, fn _ -> map end)
   end
 
   def put(key, value) do
     Agent.update(__MODULE__, &Map.put(&1, key, value))
+  end
+
+  def replace(key, value) do
+    Agent.get_and_update(__MODULE__, fn map ->
+      current = Map.get(map, key)
+      {current, Map.put(map, key, value)}
+    end)
   end
 
   def update(updater) when is_function(updater, 1) do
