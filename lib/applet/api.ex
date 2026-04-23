@@ -16,6 +16,7 @@ defmodule Applet.Api do
   end
 
   alias Applet.Utils
+  alias Applet.Multiple
   alias Applet.Api.Bus
   alias Applet.Api.Adb
   require Logger
@@ -129,6 +130,7 @@ defmodule Applet.Api do
     safe = wrap_safe(fun)
 
     entry = fn ->
+      Multiple.register!({:applet_defer, entry()}, pid)
       ref = Process.monitor(pid)
 
       receive do

@@ -80,6 +80,8 @@ defmodule Applet do
     :ok = wait_success(@delay, @times, fun)
     fun = fn -> [] = Multiple.lookup({:applet_task, route}) end
     :ok = wait_success(@delay, @times, fun)
+    fun = fn -> [] = Multiple.lookup({:applet_defer, route}) end
+    :ok = wait_success(@delay, @times, fun)
   end
 
   def reboot!() do
