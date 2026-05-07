@@ -15,7 +15,7 @@ defmodule AppletKillTest do
         end)
 
       receive do
-        {:DOWN, _, :process, ^pid, :killed} -> Api.info("killed")
+        {:DOWN, _, :process, ^pid, :killed} -> Log.info("killed")
       end
     end)
 
@@ -35,7 +35,7 @@ defmodule AppletKillTest do
         end)
 
       receive do
-        {:DOWN, _, :process, ^pid, :killed} -> Api.info("killed")
+        {:DOWN, _, :process, ^pid, :killed} -> Log.info("killed")
       end
     end)
 

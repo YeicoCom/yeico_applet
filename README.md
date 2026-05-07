@@ -22,7 +22,7 @@ Applet.run!("tryout.exs")
 Applet.start!("tryout.exs", code: """
   use Applet.Api
   f = fn f -> 
-    Api.trace(:ok)
+    Log.trace(:ok)
     Api.sleep(500)
     f.(f)
   end

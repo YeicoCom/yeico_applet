@@ -14,7 +14,7 @@ defmodule AppletDeferTest do
         applet_pid = self()
         defer_pid = Api.defer(fn ->
           Api.sleep(500)
-          Api.info("defered")
+          Log.info("defered")
         end)
         Adb.put("defer:#{route}", {applet_pid, defer_pid})
       """)
@@ -24,7 +24,7 @@ defmodule AppletDeferTest do
 
     Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
     Tester.assert_starts_with(route, :info, "#{route}/defer:")
-    spawn(fn -> Tester.run(route, fn -> Api.info("restarted") end) end)
+    spawn(fn -> Tester.run(route, fn -> Log.info("restarted") end) end)
     Tester.assert_starts_with(route, :info, "Applet exited: #{route}")
     # IO.inspect(Multiple.list())
     # IO.inspect(Multiple.lookup({:applet_defer, route}))

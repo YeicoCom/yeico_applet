@@ -4,7 +4,7 @@ defmodule Applet.WrapTest do
 
   test "wrap log" do
     route = Tester.route(__MODULE__)
-    Tester.run(route, fn -> spawn(Api.wrap(fn -> Api.warn("oops") end)) end)
+    Tester.run(route, fn -> spawn(Api.wrap(fn -> Log.warn("oops") end)) end)
     Tester.assert_starts_with(route, :warn, "oops")
   end
 
@@ -48,8 +48,8 @@ defmodule Applet.WrapTest do
     Tester.run(route, fn ->
       {fun1, _} = Api.evals("CODE1_EXS", "fn -> throw :OOPS1! end |> Applet.Api.wrap()")
       {fun2, _} = Api.evals("CODE2_EXS", "fn -> throw :OOPS2! end |> Applet.Api.wrap()")
-      Api.error(Api.safe(fun1))
-      Api.error(Api.safe(fun2))
+      Log.error(Api.safe(fun1))
+      Log.error(Api.safe(fun2))
       throw(:OOOOPS!)
     end)
 
@@ -63,8 +63,8 @@ defmodule Applet.WrapTest do
 
     Tester.run(route, fn ->
       {fun, _} = Api.evals("CODE_EXS", "fn arg -> throw arg end |> Applet.Api.wrap()")
-      Api.error(Api.safe(fun, :OOPS1!))
-      Api.error(Api.safe(fun, :OOPS2!))
+      Log.error(Api.safe(fun, :OOPS1!))
+      Log.error(Api.safe(fun, :OOPS2!))
       throw(:OOOOPS!)
     end)
 
@@ -83,8 +83,8 @@ defmodule Applet.WrapTest do
       {fun2, _} =
         Api.evals("CODE2_EXS", "wrap = Applet.Api.wrapper(); fn -> throw :OOPS2! end |> wrap.()")
 
-      Api.error(Api.safe(fun1))
-      Api.error(Api.safe(fun2))
+      Log.error(Api.safe(fun1))
+      Log.error(Api.safe(fun2))
       throw(:OOOOPS!)
     end)
 
@@ -100,8 +100,8 @@ defmodule Applet.WrapTest do
       {fun, _} =
         Api.evals("CODE_EXS", "wrap = Applet.Api.wrapper(); fn arg -> throw arg end |> wrap.()")
 
-      Api.error(Api.safe(fun, :OOPS1!))
-      Api.error(Api.safe(fun, :OOPS2!))
+      Log.error(Api.safe(fun, :OOPS1!))
+      Log.error(Api.safe(fun, :OOPS2!))
       throw(:OOOOPS!)
     end)
 
@@ -116,8 +116,8 @@ defmodule Applet.WrapTest do
     Tester.run(route, fn ->
       {fun1, _} = Api.evals("CODE1_EXS", "fn -> raise \"OOPS1!\" end |> Applet.Api.wrap()")
       {fun2, _} = Api.evals("CODE2_EXS", "fn -> raise \"OOPS2!\" end |> Applet.Api.wrap()")
-      Api.error(Api.safe(fun1))
-      Api.error(Api.safe(fun2))
+      Log.error(Api.safe(fun1))
+      Log.error(Api.safe(fun2))
       raise("OOOOPS!")
     end)
 
@@ -131,8 +131,8 @@ defmodule Applet.WrapTest do
 
     Tester.run(route, fn ->
       {fun, _} = Api.evals("CODE_EXS", "fn arg -> raise arg end |> Applet.Api.wrap()")
-      Api.error(Api.safe(fun, "OOPS1!"))
-      Api.error(Api.safe(fun, "OOPS2!"))
+      Log.error(Api.safe(fun, "OOPS1!"))
+      Log.error(Api.safe(fun, "OOPS2!"))
       raise("OOOOPS!")
     end)
 
@@ -157,8 +157,8 @@ defmodule Applet.WrapTest do
           "wrap = Applet.Api.wrapper(); fn -> raise \"OOPS2!\" end |> wrap.()"
         )
 
-      Api.error(Api.safe(fun1))
-      Api.error(Api.safe(fun2))
+      Log.error(Api.safe(fun1))
+      Log.error(Api.safe(fun2))
       raise("OOOOPS!")
     end)
 
@@ -174,8 +174,8 @@ defmodule Applet.WrapTest do
       {fun, _} =
         Api.evals("CODE_EXS", "wrap = Applet.Api.wrapper(); fn arg -> raise arg end |> wrap.()")
 
-      Api.error(Api.safe(fun, "OOPS1!"))
-      Api.error(Api.safe(fun, "OOPS2!"))
+      Log.error(Api.safe(fun, "OOPS1!"))
+      Log.error(Api.safe(fun, "OOPS2!"))
       raise("OOOOPS!")
     end)
 

@@ -2,7 +2,7 @@ defmodule Applet do
   use Applet.Alias
 
   @delay 1
-  @times 4_000
+  @times 60_000
 
   def started?() do
     Shared.get("applets:started", false)

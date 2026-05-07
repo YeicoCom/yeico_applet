@@ -2,6 +2,7 @@ defmodule Applet.Api do
   defmacro __using__(_) do
     quote do
       alias Applet.Api.Dets
+      alias Applet.Api.Log
       alias Applet.Api.Bus
       alias Applet.Api.Adb
       alias Applet.Api.Udb
@@ -19,6 +20,7 @@ defmodule Applet.Api do
   alias Applet.Multiple
   alias Applet.Api.Bus
   alias Applet.Api.Adb
+  alias Applet.Api.Log
   require Logger
 
   def route(), do: call(:route)
@@ -26,11 +28,6 @@ defmodule Applet.Api do
   def path(), do: Applet.path()
   def path(route), do: Applet.path(route)
   def load!(route), do: Applet.load!(route)
-  def trace(msg), do: log(:trace, msg)
-  def debug(msg), do: log(:debug, msg)
-  def info(msg), do: log(:info, msg)
-  def warn(msg), do: log(:warn, msg)
-  def error(msg), do: log(:error, msg)
   def sleep(), do: Utils.sleep()
   def sleep(millis), do: Utils.sleep(millis)
   def pid(%Task{} = task), do: Utils.pid(task)
@@ -70,7 +67,7 @@ defmodule Applet.Api do
 
   def loop(delay_ms, init) when is_function(init, 0) do
     fun = fn loop ->
-      async(init) |> await() |> warn()
+      async(init) |> await() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
@@ -80,7 +77,7 @@ defmodule Applet.Api do
 
   def loop(delay_ms, init, arg) when is_function(init, 1) do
     fun = fn loop ->
-      async(init, arg) |> await() |> warn()
+      async(init, arg) |> await() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
@@ -104,12 +101,6 @@ defmodule Applet.Api do
   def async(fun, arg) when is_function(fun, 1) do
     safe = wrap_safe(fn -> fun.(arg) end)
     call({:async, wrap_async(safe)})
-  end
-
-  def async(fun1, fun2) when is_function(fun1, 0) and is_function(fun2, 0) do
-    safe1 = wrap_safe(fun1)
-    safe2 = wrap_safe(fun2)
-    call({:async, wrap_async(fn -> {safe1.(), safe2.()} end)})
   end
 
   def wrap(fun) when is_function(fun, 0) do
@@ -176,28 +167,33 @@ defmodule Applet.Api do
 
     # possition is row or {row, col}
     Enum.each(diagnostics, fn
+      %{severity: :warning, position: p, message: m = "redefining module" <> _, file: f} ->
+        Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
+        m? = String.ends_with?(m, "(current version defined in memory)")
+        if !m?, do: Log.warn("#{f}:#{inspect(p)} compile warning #{m}")
+
       %{severity: :warning, position: p, message: m, file: f} ->
         Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
-        warn("#{f}:#{inspect(p)} compile warning #{m}")
+        Log.warn("#{f}:#{inspect(p)} compile warning #{m}")
 
       %{severity: :error, position: p, message: m, file: f} ->
         Logger.error(route: route, severity: :warning, position: p, message: m, file: f)
-        error("#{f}:#{inspect(p)} compile error #{m}")
+        Log.error("#{f}:#{inspect(p)} compile error #{m}")
     end)
 
     # too much error types to ensure full coverage
     case result do
       {:rescue, ex, st} ->
         Logger.error(route: route, rescue: ex, stack: st)
-        error("#{route} rescue: #{inspect(ex)} stack: #{inspect(st)}")
+        Log.error("#{route} rescue: #{inspect(ex)} stack: #{inspect(st)}")
 
       {:catch, ex, st} ->
         Logger.error(route: route, catch: ex, stack: st)
-        error("#{route} catch: #{inspect(ex)} stack: #{inspect(st)}")
+        Log.error("#{route} catch: #{inspect(ex)} stack: #{inspect(st)}")
 
       result ->
         Logger.debug(route: route, result: result)
-        info("#{route}: #{inspect(result)}")
+        Log.info("#{route}: #{inspect(result)}")
     end
 
     {result, bindings |> Enum.into(%{})}
@@ -235,16 +231,16 @@ defmodule Applet.Api do
   end
 
   # log with entry route
-  defp log(type, msg) when is_binary(msg) do
+  def log(type, msg) when is_binary(msg) do
     line = "#{route()} #{inspect(self())} #{msg}"
     Applet.broadcast!(entry(), type, line)
-    # for |> Api.trace()
+    # for |> Log.trace()
     msg
   end
 
-  defp log(type, msg) do
+  def log(type, msg) do
     log(type, inspect(msg))
-    # for |> Api.trace()
+    # for |> Log.trace()
     msg
   end
 
@@ -290,8 +286,8 @@ defmodule Applet.Api do
 
   defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
     Logger.error(entry: entry(), route: route(), unhandled: type, error: error, stack: stack)
-    debug("UNHANDLED #{type} error #{inspect(error)}")
-    trace("UNHANDLED #{type} stack #{inspect(stack)}")
+    Log.debug("UNHANDLED #{type} error #{inspect(error)}")
+    Log.trace("UNHANDLED #{type} stack #{inspect(stack)}")
     res
   end
 
