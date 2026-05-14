@@ -28,6 +28,11 @@ defmodule Applet.Api do
   def path(), do: Applet.path()
   def path(route), do: Applet.path(route)
   def load!(route), do: Applet.load!(route)
+  def trace(msg), do: log(:trace, msg)
+  def debug(msg), do: log(:debug, msg)
+  def info(msg), do: log(:info, msg)
+  def warn(msg), do: log(:warn, msg)
+  def error(msg), do: log(:error, msg)
   def sleep(), do: Utils.sleep()
   def sleep(millis), do: Utils.sleep(millis)
   def pid(%Task{} = task), do: Utils.pid(task)
@@ -62,7 +67,9 @@ defmodule Applet.Api do
 
   def putcast!(key, value) do
     prev = Adb.replace(key, value)
-    if prev != value, do: Bus.broadcast!(key, value)
+    diff = prev != value
+    if diff, do: Bus.broadcast!(key, value)
+    diff
   end
 
   def loop(delay_ms, init) when is_function(init, 0) do
