@@ -41,6 +41,7 @@ defmodule Applet.Api do
   def hostname(), do: Utils.hostname()
   def hostname_f(), do: Utils.hostname_f()
   def resolve(host), do: Utils.resolve(host)
+  def receive(), do: receive(do: (msg -> msg))
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
   def swait(task = %Task{}), do: Utils.await(task)
