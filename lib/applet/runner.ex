@@ -41,6 +41,7 @@ defmodule Applet.Runner do
       end
 
     Process.put(:__api__, api)
+    Process.put(:__tag__, route)
 
     prefix = inspect(self())
 

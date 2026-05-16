@@ -30,7 +30,7 @@ defmodule AppletDeferTest do
     # IO.inspect(Multiple.lookup({:applet_defer, route}))
     # check it is registered under entry and not route
     {applet_pid, defer_pid} = Adb.get("defer:#{route}")
-    assert {defer_pid, tag: nil, pid: applet_pid} in Multiple.lookup({:applet_defer, route})
+    assert {defer_pid, tag: route, pid: applet_pid} in Multiple.lookup({:applet_defer, route})
     Tester.assert_starts_with(route, :info, "defered")
     Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
     Tester.assert_starts_with(route, :info, "restarted")
