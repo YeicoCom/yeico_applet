@@ -269,4 +269,12 @@ defmodule Applet do
     |> Multiple.lookup()
     |> Enum.each(&Utils.kill(elem(&1, 0)))
   end
+
+  def print_tree(route) do
+    IO.inspect(main: Unique.lookup({:applet_main, route}))
+    IO.inspect(super: Unique.lookup({:applet_super, route}))
+    Multiple.lookup({:applet_task, route}) |> Enum.each(&IO.inspect(task: &1))
+    Multiple.lookup({:applet_defer, route}) |> Enum.each(&IO.inspect(defer: &1))
+    :ok
+  end
 end
