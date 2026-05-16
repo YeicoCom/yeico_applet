@@ -271,10 +271,11 @@ defmodule Applet do
   end
 
   def print_tree(route) do
-    IO.inspect(main: Unique.lookup({:applet_main, route}))
-    IO.inspect(super: Unique.lookup({:applet_super, route}))
-    Multiple.lookup({:applet_task, route}) |> Enum.each(&IO.inspect(task: &1))
-    Multiple.lookup({:applet_defer, route}) |> Enum.each(&IO.inspect(defer: &1))
+    print = fn name, {pid, payload} -> IO.puts("#{name} #{inspect(pid)} #{inspect(payload)}") end
+    Unique.lookup({:applet_main, route}) |> Enum.each(&print.(:main, &1))
+    Unique.lookup({:applet_super, route}) |> Enum.each(&print.(:super, &1))
+    Multiple.lookup({:applet_task, route}) |> Enum.each(&print.(:task, &1))
+    Multiple.lookup({:applet_defer, route}) |> Enum.each(&print.(:defer, &1))
     :ok
   end
 end
