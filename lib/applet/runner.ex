@@ -60,7 +60,7 @@ defmodule Applet.Runner do
     receive do
       msg ->
         Logger.notice(route: route, pid: pid, flush: msg)
-        Log.debug(route: route, flush: msg)
+        Log.debug(flush: msg)
         flush(pid, route)
     end
   end
