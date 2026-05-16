@@ -31,4 +31,49 @@ defmodule AppletLoopTest do
     Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
     Tester.assert_starts_with(route, :info, "killed")
   end
+
+  test "registration" do
+    route = Tester.route(__MODULE__)
+
+    parent = self()
+
+    push = fn tag ->
+      send(parent, {tag, self()})
+      Api.sleep()
+    end
+
+    Tester.run(route, fn ->
+      par = self()
+      send(parent, {:par, par})
+      %{pid: pid} = Api.loop(0, fn _ -> push.("nil0") end, nil)
+      send(parent, {:nil0, pid})
+      %{pid: pid} = Api.loop(0, fn -> push.("nil1") end)
+      send(parent, {:nil1, pid})
+      %{pid: pid} = Api.loop("tag0", 0, fn -> push.("tag0") end)
+      send(parent, {:tag0, pid})
+      %{pid: pid} = Api.loop("tag1", 0, fn _ -> push.("tag1") end, nil)
+      send(parent, {:tag1, pid})
+      :ok
+    end)
+
+    par = receive do: ({:par, pid} -> pid)
+    nil0 = receive do: ({:nil0, pid} -> pid)
+    nil1 = receive do: ({:nil1, pid} -> pid)
+    tag0 = receive do: ({:tag0, pid} -> pid)
+    tag1 = receive do: ({:tag1, pid} -> pid)
+    nil0c = receive do: ({"nil0", pid} -> pid)
+    nil1c = receive do: ({"nil1", pid} -> pid)
+    tag0c = receive do: ({"tag0", pid} -> pid)
+    tag1c = receive do: ({"tag1", pid} -> pid)
+    Tester.assert_starts_with(route, :info, "Applet starting: #{route}")
+    Tester.assert_starts_with(route, :info, "#{route}: :ok")
+    assert {nil0, tag: nil, par: par} in Multiple.lookup({:applet_task, route})
+    assert {nil1, tag: nil, par: par} in Multiple.lookup({:applet_task, route})
+    assert {tag0, tag: "tag0:super", par: par} in Multiple.lookup({:applet_task, route})
+    assert {tag1, tag: "tag1:super", par: par} in Multiple.lookup({:applet_task, route})
+    assert {nil0c, tag: nil, par: nil0} in Multiple.lookup({:applet_task, route})
+    assert {nil1c, tag: nil, par: nil1} in Multiple.lookup({:applet_task, route})
+    assert {tag0c, tag: "tag0:setup", par: tag0} in Multiple.lookup({:applet_task, route})
+    assert {tag1c, tag: "tag1:setup", par: tag1} in Multiple.lookup({:applet_task, route})
+  end
 end

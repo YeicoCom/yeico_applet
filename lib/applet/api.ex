@@ -74,10 +74,10 @@ defmodule Applet.Api do
     diff
   end
 
-  def loop(delay_ms, init) when is_function(init, 0) do
+  def loop(delay_ms, setup) when is_integer(delay_ms) and is_function(setup, 0) do
     fun = fn loop ->
       Process.flag(:trap_exit, true)
-      async(init) |> swait() |> Log.debug()
+      async(setup) |> swait() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
@@ -85,15 +85,39 @@ defmodule Applet.Api do
     async(fun, fun)
   end
 
-  def loop(delay_ms, init, arg) when is_function(init, 1) do
+  def loop(delay_ms, setup, arg) when is_integer(delay_ms) and is_function(setup, 1) do
     fun = fn loop ->
       Process.flag(:trap_exit, true)
-      async(init, arg) |> swait() |> Log.debug()
+      async(setup, arg) |> swait() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
 
     async(fun, fun)
+  end
+
+  def loop(tag, delay_ms, setup)
+      when is_binary(tag) and is_integer(delay_ms) and is_function(setup, 0) do
+    fun = fn loop ->
+      Process.flag(:trap_exit, true)
+      async("#{tag}:setup", setup) |> swait() |> Log.debug()
+      flush(delay_ms)
+      loop.(loop)
+    end
+
+    async("#{tag}:super", fun, fun)
+  end
+
+  def loop(tag, delay_ms, setup, arg)
+      when is_binary(tag) and is_integer(delay_ms) and is_function(setup, 1) do
+    fun = fn loop ->
+      Process.flag(:trap_exit, true)
+      async("#{tag}:setup", setup, arg) |> swait() |> Log.debug()
+      flush(delay_ms)
+      loop.(loop)
+    end
+
+    async("#{tag}:super", fun, fun)
   end
 
   def flush(toms \\ 0) when is_integer(toms) do
