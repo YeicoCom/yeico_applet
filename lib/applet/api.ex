@@ -108,12 +108,22 @@ defmodule Applet.Api do
 
   def async(fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
-    call({:async, wrap_async(safe)})
+    call({:async, nil, wrap_async(safe)})
   end
 
   def async(fun, arg) when is_function(fun, 1) do
     safe = wrap_safe(fn -> fun.(arg) end)
-    call({:async, wrap_async(safe)})
+    call({:async, nil, wrap_async(safe)})
+  end
+
+  def async(tag, fun) when is_binary(tag) and is_function(fun, 0) do
+    safe = wrap_safe(fun)
+    call({:async, tag, wrap_async(safe)})
+  end
+
+  def async(tag, fun, arg) when is_binary(tag) and is_function(fun, 1) do
+    safe = wrap_safe(fn -> fun.(arg) end)
+    call({:async, tag, wrap_async(safe)})
   end
 
   def wrap(fun) when is_function(fun, 0) do
@@ -126,15 +136,15 @@ defmodule Applet.Api do
     wrap_async(safe)
   end
 
-  def defer(fun) when is_function(fun, 0), do: defer(self(), fun)
+  def defer(fun, arg) when is_function(fun, 1), do: defer(fn -> fun.(arg) end)
 
-  def defer(fun, arg) when is_function(fun, 1), do: defer(self(), fn -> fun.(arg) end)
-
-  def defer(pid, fun) when is_pid(pid) and is_function(fun, 0) do
+  def defer(fun) when is_function(fun, 0) do
+    tag = Process.get(:__tag__)
     safe = wrap_safe(fun)
+    pid = self()
 
     entry = fn ->
-      Multiple.register!({:applet_defer, entry()}, pid)
+      Multiple.register!({:applet_defer, entry()}, tag: tag, pid: pid)
       ref = Process.monitor(pid)
 
       receive do
@@ -145,8 +155,10 @@ defmodule Applet.Api do
     spawn(wrap_async(entry))
   end
 
-  def defer(pid, fun, arg) when is_pid(pid) and is_function(fun, 1),
-    do: defer(pid, fn -> fun.(arg) end)
+  def run(fun) when is_function(fun, 0) do
+    safe = wrap_safe(fun)
+    spawn(wrap_async(safe))
+  end
 
   def evalf(route, bindings \\ []) do
     code = Applet.load!(route)

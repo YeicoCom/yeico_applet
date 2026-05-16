@@ -28,11 +28,14 @@ defmodule Applet.Runner do
         {:await, task, toms} ->
           Task.await(task, toms)
 
-        {:async, fun} ->
+        {:async, tag, fun} ->
           # created task process gets linked to the caller
           # left as is to make unexpected exits very noticeable
+          par = self()
+
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet_task, route}, :async)
+            Multiple.register!({:applet_task, route}, tag: tag, par: par)
+            Process.put(:__tag__, tag)
             fun.()
           end)
       end
