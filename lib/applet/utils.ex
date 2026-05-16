@@ -75,4 +75,20 @@ defmodule Applet.Utils do
     # not a reference
     # Process.demonitor(pid)
   end
+
+  # Task.await forwards exit signals making it not suitable for loops
+  def await(%Task{ref: ref, owner: owner} = task) do
+    if owner != self() do
+      raise ArgumentError, "#{inspect(self())} is not the owner of #{inspect(task)}"
+    end
+
+    receive do
+      {^ref, reply} ->
+        Process.demonitor(ref, [:flush])
+        {:ok, reply}
+
+      {:DOWN, ^ref, _, proc, reason} ->
+        {:error, %{error: :down, reason: reason, proc: proc, task: task}}
+    end
+  end
 end

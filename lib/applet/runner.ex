@@ -7,6 +7,7 @@ defmodule Applet.Runner do
   end
 
   defp init(%{route: route, code: code, bindings: bindings}) do
+    Process.flag(:trap_exit, true)
     :ok = Applet.stop!(route)
     Unique.register!({:applet_main, route}, nil)
     # for Applet.started
@@ -38,18 +39,29 @@ defmodule Applet.Runner do
 
     Process.put(:__api__, api)
 
+    prefix = inspect(self())
+
     unless Applet.started?() do
-      Logger.notice("Applet waiting: #{route}")
+      Logger.notice("#{prefix} Applet waiting: #{route}")
       Log.info("Applet waiting: #{route}")
       Applet.await()
     end
 
-    Logger.notice("Applet starting: #{route}")
+    Logger.notice("#{prefix} Applet starting: #{route}")
     Log.info("Applet starting: #{route}")
-    Api.defer(fn -> Logger.notice("Applet exited: #{route}") end)
+    Api.defer(fn -> Logger.notice("#{prefix} Applet exited: #{route}") end)
     Api.defer(fn -> Log.info("Applet exited: #{route}") end)
     {result, binding} = Api.evals(route, code, bindings)
     Unique.update!({:applet_main, route}, {result, binding})
-    Process.sleep(:infinity)
+    flush(self(), route)
+  end
+
+  defp flush(pid, route) do
+    receive do
+      msg ->
+        Logger.notice(route: route, pid: pid, flush: msg)
+        Log.debug(route: route, flush: msg)
+        flush(pid, route)
+    end
   end
 end

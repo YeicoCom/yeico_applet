@@ -43,6 +43,7 @@ defmodule Applet.Api do
   def resolve(host), do: Utils.resolve(host)
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
+  def swait(task = %Task{}), do: Utils.await(task)
   def await(fun) when is_function(fun, 0), do: await(fun, 100)
   def await(task = %Task{}), do: call({:await, task, :infinity})
   def await(task = %Task{}, toms), do: call({:await, task, toms})
@@ -74,7 +75,8 @@ defmodule Applet.Api do
 
   def loop(delay_ms, init) when is_function(init, 0) do
     fun = fn loop ->
-      async(init) |> await() |> Log.debug()
+      Process.flag(:trap_exit, true)
+      async(init) |> swait() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
@@ -84,7 +86,8 @@ defmodule Applet.Api do
 
   def loop(delay_ms, init, arg) when is_function(init, 1) do
     fun = fn loop ->
-      async(init, arg) |> await() |> Log.debug()
+      Process.flag(:trap_exit, true)
+      async(init, arg) |> swait() |> Log.debug()
       flush(delay_ms)
       loop.(loop)
     end
@@ -94,7 +97,9 @@ defmodule Applet.Api do
 
   def flush(toms \\ 0) when is_integer(toms) do
     receive do
-      _ -> flush(toms)
+      msg ->
+        Log.debug(flush: msg)
+        flush(toms)
     after
       toms -> :ok
     end
