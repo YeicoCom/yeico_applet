@@ -69,7 +69,7 @@ defmodule Applet do
 
   def stop!(route) do
     :ok = kill_unique({:applet_main, route})
-    :ok = kill_multiple({:applet_task, route})
+    :ok = kill_multiple({:applet_async, route})
     await!(route)
   end
 
@@ -78,7 +78,7 @@ defmodule Applet do
     :ok = wait_success(@delay, @times, fun)
     fun = fn -> [] = Unique.lookup({:applet_super, route}) end
     :ok = wait_success(@delay, @times, fun)
-    fun = fn -> [] = Multiple.lookup({:applet_task, route}) end
+    fun = fn -> [] = Multiple.lookup({:applet_async, route}) end
     :ok = wait_success(@delay, @times, fun)
     fun = fn -> [] = Multiple.lookup({:applet_defer, route}) end
     :ok = wait_success(@delay, @times, fun)
@@ -274,7 +274,7 @@ defmodule Applet do
     print = fn name, {pid, payload} -> IO.puts("#{name} #{inspect(pid)} #{inspect(payload)}") end
     Unique.lookup({:applet_main, route}) |> Enum.each(&print.(:main, &1))
     Unique.lookup({:applet_super, route}) |> Enum.each(&print.(:super, &1))
-    Multiple.lookup({:applet_task, route}) |> Enum.each(&print.(:task, &1))
+    Multiple.lookup({:applet_async, route}) |> Enum.each(&print.(:async, &1))
     Multiple.lookup({:applet_defer, route}) |> Enum.each(&print.(:defer, &1))
     :ok
   end

@@ -34,7 +34,7 @@ defmodule Applet.Runner do
           par = self()
 
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet_task, route}, tag: tag, par: par)
+            Multiple.register!({:applet_async, route}, tag: tag, par: par)
             Process.put(:__tag__, tag)
             fun.()
           end)
@@ -53,8 +53,12 @@ defmodule Applet.Runner do
 
     Logger.notice("#{prefix} Applet starting: #{route}")
     Log.info("Applet starting: #{route}")
-    Api.defer(fn -> Logger.notice("#{prefix} Applet exited: #{route}") end)
-    Api.defer(fn -> Log.info("Applet exited: #{route}") end)
+
+    Api.defer(fn ->
+      Logger.notice("#{prefix} Applet exited: #{route}")
+      Log.info("Applet exited: #{route}")
+    end)
+
     {result, binding} = Api.evals(route, code, bindings)
     Unique.update!({:applet_main, route}, {result, binding})
     flush(self(), route)

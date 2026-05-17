@@ -27,7 +27,7 @@ defmodule AppletAsyncTest do
     par = receive do: ({:parent, par} -> par)
     pid = receive do: ({:async, pid} -> pid)
     dip = receive do: ({:defer, dip} -> dip)
-    assert {pid, tag: tag, par: par} in Multiple.lookup({:applet_task, route})
+    assert {pid, tag: tag, par: par} in Multiple.lookup({:applet_async, route})
     # this may not be ready
     assert {dip, tag: tag, pid: pid} in Multiple.lookup({:applet_defer, route})
   end
