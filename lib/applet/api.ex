@@ -283,7 +283,9 @@ defmodule Applet.Api do
   end
 
   def log(type, msg) do
-    log(type, inspect(msg))
+    # https://hexdocs.pm/elixir/Inspect.Opts.html
+    opts = [limit: :infinity, printable_limit: :infinity, width: :infinity]
+    log(type, inspect(msg, opts))
     # for |> Log.trace()
     msg
   end
