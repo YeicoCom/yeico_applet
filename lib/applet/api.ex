@@ -216,11 +216,6 @@ defmodule Applet.Api do
 
     # possition is row or {row, col}
     Enum.each(diagnostics, fn
-      %{severity: :warning, position: p, message: m = "redefining module" <> _, file: f} ->
-        Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
-        m? = String.ends_with?(m, "(current version defined in memory)")
-        if !m?, do: Log.warn("#{f}:#{inspect(p)} compile warning #{m}")
-
       %{severity: :warning, position: p, message: m, file: f} ->
         Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
         Log.warn("#{f}:#{inspect(p)} compile warning #{m}")
