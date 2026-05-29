@@ -93,4 +93,11 @@ defmodule Applet.AdbTest do
     assert 1 == Adb.replace(:key, 2)
     assert 2 == Adb.replace(:key, 3)
   end
+
+  test "get_and_update" do
+    assert :ok == Adb.reset()
+    assert :ok == Adb.put(:key, 1)
+    assert 1 == Adb.get_and_update(&{Map.get(&1, :key), Map.put(&1, :key, 2)})
+    assert 2 == Adb.get_and_update(&{Map.get(&1, :key), Map.put(&1, :key, 3)})
+  end
 end

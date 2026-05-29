@@ -37,13 +37,6 @@ defmodule Applet.Api.Adb do
     Agent.update(__MODULE__, &Map.put(&1, key, value))
   end
 
-  def replace(key, value) do
-    Agent.get_and_update(__MODULE__, fn map ->
-      current = Map.get(map, key)
-      {current, Map.put(map, key, value)}
-    end)
-  end
-
   def update(updater) when is_function(updater, 1) do
     Agent.update(__MODULE__, updater)
   end
@@ -52,7 +45,15 @@ defmodule Applet.Api.Adb do
     Agent.update(__MODULE__, &Map.update(&1, key, default, updater))
   end
 
+  def replace(key, value) do
+    Agent.get_and_update(__MODULE__, &{Map.get(&1, key), Map.put(&1, key, value)})
+  end
+
   def delete(key) do
     Agent.get_and_update(__MODULE__, &{Map.get(&1, key), Map.delete(&1, key)})
+  end
+
+  def get_and_update(updater) when is_function(updater, 1) do
+    Agent.get_and_update(__MODULE__, updater)
   end
 end
