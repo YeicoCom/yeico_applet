@@ -74,6 +74,13 @@ defmodule Applet.Api do
     diff
   end
 
+  def dropcast!(key) do
+    prev = Adb.delete(key)
+    diff = prev != nil
+    if diff, do: Bus.broadcast!(key, nil)
+    diff
+  end
+
   def loop(delay_ms, setup) when is_integer(delay_ms) and is_function(setup, 0) do
     fun = fn loop ->
       Process.flag(:trap_exit, true)
