@@ -168,7 +168,7 @@ defmodule Applet.Api do
     pid = self()
 
     entry = fn ->
-      Multiple.register!({:applet_defer, entry()}, tag: tag, pid: pid)
+      Multiple.register!({:applet_defer, entry()}, tag: tag, mon: pid)
       ref = Process.monitor(pid)
 
       receive do
