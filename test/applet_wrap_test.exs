@@ -18,7 +18,7 @@ defmodule Applet.WrapTest do
   test "wrap unhandled catch" do
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> spawn(Api.wrap(fn -> throw("oops") end)) end)
-    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error \"oops\"")
+    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error oops")
     Tester.assert_starts_with(route, :trace, "UNHANDLED catch stack [")
   end
 

@@ -11,7 +11,7 @@ defmodule Applet.UnhandledTest do
   test "applet unhandled throw" do
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> throw("oops") end)
-    Tester.assert_starts_with(route, :error, "#{route} catch: \"oops\"")
+    Tester.assert_starts_with(route, :error, "#{route} catch: oops")
   end
 
   test "applet match error" do
@@ -36,7 +36,7 @@ defmodule Applet.UnhandledTest do
   test "async unhandled throw" do
     route = Tester.route(__MODULE__)
     Tester.run(route, fn -> Api.async(fn -> throw("oops") end) end)
-    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error \"oops\"")
+    Tester.assert_starts_with(route, :debug, "UNHANDLED catch error oops")
     Tester.assert_starts_with(route, :trace, "UNHANDLED catch stack [")
   end
 

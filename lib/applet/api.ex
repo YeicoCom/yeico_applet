@@ -23,6 +23,8 @@ defmodule Applet.Api do
   alias Applet.Api.Log
   require Logger
 
+  @inspect [limit: :infinity, printable_limit: :infinity, width: :infinity]
+
   def route(), do: call(:route)
   def entry(), do: call(:entry)
   def path(), do: Applet.path()
@@ -42,6 +44,8 @@ defmodule Applet.Api do
   def hostname_f(), do: Utils.hostname_f()
   def resolve(host), do: Utils.resolve(host)
   def receive(), do: receive(do: (msg -> msg))
+  def inspect?(term) when is_binary(term), do: term
+  def inspect?(term), do: inspect(term, @inspect)
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
   def swait(task = %Task{}), do: Utils.await(task)
@@ -225,26 +229,26 @@ defmodule Applet.Api do
     Enum.each(diagnostics, fn
       %{severity: :warning, position: p, message: m, file: f} ->
         Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
-        Log.warn("#{f}:#{inspect(p)} compile warning #{m}")
+        Log.warn("#{f}:#{inspect?(p)} compile warning #{m}")
 
       %{severity: :error, position: p, message: m, file: f} ->
         Logger.error(route: route, severity: :warning, position: p, message: m, file: f)
-        Log.error("#{f}:#{inspect(p)} compile error #{m}")
+        Log.error("#{f}:#{inspect?(p)} compile error #{m}")
     end)
 
     # too much error types to ensure full coverage
     case result do
       {:rescue, ex, st} ->
         Logger.error(route: route, rescue: ex, stack: st)
-        Log.error("#{route} rescue: #{inspect(ex)} stack: #{inspect(st)}")
+        Log.error("#{route} rescue: #{inspect?(ex)} stack: #{inspect?(st)}")
 
       {:catch, ex, st} ->
         Logger.error(route: route, catch: ex, stack: st)
-        Log.error("#{route} catch: #{inspect(ex)} stack: #{inspect(st)}")
+        Log.error("#{route} catch: #{inspect?(ex)} stack: #{inspect?(st)}")
 
       result ->
         Logger.debug(route: route, result: result)
-        Log.info("#{route}: #{inspect(result)}")
+        Log.info("#{route}: #{inspect?(result)}")
     end
 
     {result, bindings |> Enum.into(%{})}
@@ -283,7 +287,7 @@ defmodule Applet.Api do
 
   # log with entry route
   def log(type, msg) when is_binary(msg) do
-    line = "#{route()} #{inspect(self())} #{msg}"
+    line = "#{route()} #{inspect?(self())} #{msg}"
     Applet.broadcast!(entry(), type, line)
     # for |> Log.trace()
     msg
@@ -291,8 +295,7 @@ defmodule Applet.Api do
 
   def log(type, msg) do
     # https://hexdocs.pm/elixir/Inspect.Opts.html
-    opts = [limit: :infinity, printable_limit: :infinity, width: :infinity]
-    log(type, inspect(msg, opts))
+    log(type, inspect?(msg))
     # for |> Log.trace()
     msg
   end
@@ -339,8 +342,8 @@ defmodule Applet.Api do
 
   defp log_unhandled(res = {:error, %{type: type, error: error, stack: stack}}) do
     Logger.error(entry: entry(), route: route(), unhandled: type, error: error, stack: stack)
-    Log.debug("UNHANDLED #{type} error #{inspect(error)}")
-    Log.trace("UNHANDLED #{type} stack #{inspect(stack)}")
+    Log.debug("UNHANDLED #{type} error #{inspect?(error)}")
+    Log.trace("UNHANDLED #{type} stack #{inspect?(stack)}")
     res
   end
 
