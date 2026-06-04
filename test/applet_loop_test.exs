@@ -11,7 +11,7 @@ defmodule AppletLoopTest do
       parent = self()
 
       task =
-        Api.loop(0, fn ->
+        Api.loop(fn ->
           count = Adb.get(key, 0)
           Adb.put(key, count + 1)
           send(parent, {:count, count})
@@ -45,13 +45,13 @@ defmodule AppletLoopTest do
     Tester.run(route, fn ->
       par = self()
       send(parent, {:par, par})
-      %{pid: pid} = Api.loop(0, fn _ -> push.("nil0") end, nil)
+      %{pid: pid} = Api.loop(fn _ -> push.("nil0") end, nil)
       send(parent, {:nil0, pid})
-      %{pid: pid} = Api.loop(0, fn -> push.("nil1") end)
+      %{pid: pid} = Api.loop(fn -> push.("nil1") end)
       send(parent, {:nil1, pid})
-      %{pid: pid} = Api.loop("tag0", 0, fn -> push.("tag0") end)
+      %{pid: pid} = Api.loop(fn -> push.("tag0") end, tag: "tag0")
       send(parent, {:tag0, pid})
-      %{pid: pid} = Api.loop("tag1", 0, fn _ -> push.("tag1") end, nil)
+      %{pid: pid} = Api.loop(fn _ -> push.("tag1") end, nil, tag: "tag1")
       send(parent, {:tag1, pid})
       :ok
     end)

@@ -12,11 +12,14 @@ defmodule AppletAsyncTest do
       send(parent, {:parent, par})
 
       %{pid: pid} =
-        Api.async(tag, fn ->
-          dip = Api.defer(fn -> nil end)
-          send(parent, {:defer, dip})
-          Api.sleep()
-        end)
+        Api.async(
+          fn ->
+            dip = Api.defer(fn -> nil end, before: fn -> send(parent, {:before, self()}) end)
+            send(parent, {:defer, dip})
+            Api.sleep()
+          end,
+          tag: tag
+        )
 
       send(parent, {:async, pid})
       :ok
@@ -27,8 +30,9 @@ defmodule AppletAsyncTest do
     par = receive do: ({:parent, par} -> par)
     pid = receive do: ({:async, pid} -> pid)
     dip = receive do: ({:defer, dip} -> dip)
+    ^dip = receive do: ({:before, dip} -> dip)
     assert {pid, tag: tag, par: par} in Multiple.lookup({:applet_async, route})
-    # this may not be ready
+    # flaky: this may not be ready -> before ensures it is ready
     assert {dip, tag: tag, mon: pid} in Multiple.lookup({:applet_defer, route})
   end
 end

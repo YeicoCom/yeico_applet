@@ -85,78 +85,79 @@ defmodule Applet.Api do
     diff
   end
 
-  def loop(delay_ms, setup) when is_integer(delay_ms) and is_function(setup, 0) do
-    fun = fn loop ->
+  def loop(setup) when is_function(setup, 0), do: loop(setup, [])
+
+  def loop(setup, opts) when is_function(setup, 0) do
+    rdms = Keyword.get(opts, :rdms, 0)
+    level = Keyword.get(opts, :level)
+    tag = Keyword.get(opts, :tag)
+    opts0 = if(tag, do: [tag: "#{tag}:super"], else: [])
+    opts1 = if(tag, do: [tag: "#{tag}:setup"], else: [])
+
+    fun = fn {loop, start} ->
       Process.flag(:trap_exit, true)
-      async(setup) |> swait() |> Log.debug()
-      flush(delay_ms)
-      loop.(loop)
+      res = async(setup, opts1) |> swait()
+      if level, do: log(level, loop: res)
+      now = System.monotonic_time(:millisecond)
+      toms = max(0, rdms - (now - start))
+      flush(toms: toms, level: level)
+      now = System.monotonic_time(:millisecond)
+      loop.({loop, now})
     end
 
-    async(fun, fun)
+    now = System.monotonic_time(:millisecond)
+    async(fun, {fun, now}, opts0)
   end
 
-  def loop(delay_ms, setup, arg) when is_integer(delay_ms) and is_function(setup, 1) do
-    fun = fn loop ->
+  def loop(setup, arg) when is_function(setup, 1), do: loop(setup, arg, [])
+
+  def loop(setup, arg, opts) when is_function(setup, 1) do
+    rdms = Keyword.get(opts, :rdms, 0)
+    level = Keyword.get(opts, :level)
+    tag = Keyword.get(opts, :tag)
+    opts0 = if(tag, do: [tag: "#{tag}:super"], else: [])
+    opts1 = if(tag, do: [tag: "#{tag}:setup"], else: [])
+
+    fun = fn {loop, start} ->
       Process.flag(:trap_exit, true)
-      async(setup, arg) |> swait() |> Log.debug()
-      flush(delay_ms)
-      loop.(loop)
+      res = async(setup, arg, opts1) |> swait()
+      if level, do: log(level, loop: res)
+      now = System.monotonic_time(:millisecond)
+      toms = max(0, rdms - (now - start))
+      flush(toms: toms, level: level)
+      now = System.monotonic_time(:millisecond)
+      loop.({loop, now})
     end
 
-    async(fun, fun)
+    now = System.monotonic_time(:millisecond)
+    async(fun, {fun, now}, opts0)
   end
 
-  def loop(tag, delay_ms, setup)
-      when is_binary(tag) and is_integer(delay_ms) and is_function(setup, 0) do
-    fun = fn loop ->
-      Process.flag(:trap_exit, true)
-      async("#{tag}:setup", setup) |> swait() |> Log.debug()
-      flush(delay_ms)
-      loop.(loop)
-    end
+  def flush(opts \\ []) do
+    toms = Keyword.get(opts, :toms, 0)
+    level = Keyword.get(opts, :level)
 
-    async("#{tag}:super", fun, fun)
-  end
-
-  def loop(tag, delay_ms, setup, arg)
-      when is_binary(tag) and is_integer(delay_ms) and is_function(setup, 1) do
-    fun = fn loop ->
-      Process.flag(:trap_exit, true)
-      async("#{tag}:setup", setup, arg) |> swait() |> Log.debug()
-      flush(delay_ms)
-      loop.(loop)
-    end
-
-    async("#{tag}:super", fun, fun)
-  end
-
-  def flush(toms \\ 0) when is_integer(toms) do
     receive do
       msg ->
-        Log.debug(flush: msg)
-        flush(toms)
+        if level, do: log(level, flush: msg)
+        flush(opts)
     after
       toms -> :ok
     end
   end
 
-  def async(fun) when is_function(fun, 0) do
-    safe = wrap_safe(fun)
-    call({:async, nil, wrap_async(safe)})
-  end
+  def async(fun) when is_function(fun, 0), do: async(fun, [])
 
-  def async(fun, arg) when is_function(fun, 1) do
-    safe = wrap_safe(fn -> fun.(arg) end)
-    call({:async, nil, wrap_async(safe)})
-  end
-
-  def async(tag, fun) when is_binary(tag) and is_function(fun, 0) do
+  def async(fun, opts) when is_function(fun, 0) do
+    tag = Keyword.get(opts, :tag)
     safe = wrap_safe(fun)
     call({:async, tag, wrap_async(safe)})
   end
 
-  def async(tag, fun, arg) when is_binary(tag) and is_function(fun, 1) do
+  def async(fun, arg) when is_function(fun, 1), do: async(fun, arg, [])
+
+  def async(fun, arg, opts) when is_function(fun, 1) do
+    tag = Keyword.get(opts, :tag)
     safe = wrap_safe(fn -> fun.(arg) end)
     call({:async, tag, wrap_async(safe)})
   end
@@ -171,9 +172,14 @@ defmodule Applet.Api do
     wrap_async(safe)
   end
 
-  def defer(fun, arg) when is_function(fun, 1), do: defer(fn -> fun.(arg) end)
+  def defer(fun) when is_function(fun, 0), do: defer(fun, [])
 
-  def defer(fun) when is_function(fun, 0) do
+  def defer(fun, arg, opts) when is_function(fun, 1), do: defer(fn -> fun.(arg) end, opts)
+
+  def defer(fun, arg) when is_function(fun, 1), do: defer(fn -> fun.(arg) end, [])
+
+  def defer(fun, opts) when is_function(fun, 0) do
+    before = Keyword.get(opts, :before)
     tag = Process.get(:__tag__)
     safe = wrap_safe(fun)
     pid = self()
@@ -181,6 +187,7 @@ defmodule Applet.Api do
     entry = fn ->
       Multiple.register!({:applet_defer, entry()}, tag: tag, mon: pid)
       ref = Process.monitor(pid)
+      if before, do: safe(before)
 
       receive do
         {:DOWN, ^ref, _, ^pid, _} -> safe.()
@@ -190,6 +197,7 @@ defmodule Applet.Api do
     spawn(wrap_async(entry))
   end
 
+  # fire and forget, no tracking, only environment
   def run(fun) when is_function(fun, 0) do
     safe = wrap_safe(fun)
     spawn(wrap_async(safe))
