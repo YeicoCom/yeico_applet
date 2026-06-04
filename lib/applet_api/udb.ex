@@ -3,6 +3,10 @@ defmodule Applet.Api.Udb do
     Registry.child_spec(keys: :unique, name: __MODULE__)
   end
 
+  def register(key, value) do
+    Registry.register(__MODULE__, key, value)
+  end
+
   def register!(key, value) do
     {:ok, _} = Registry.register(__MODULE__, key, value)
   end
