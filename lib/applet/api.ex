@@ -23,6 +23,7 @@ defmodule Applet.Api do
   alias Applet.Api.Log
   require Logger
 
+  # https://hexdocs.pm/elixir/Inspect.Opts.html
   @inspect [limit: :infinity, printable_limit: :infinity, width: :infinity]
 
   def route(), do: call(:route)
@@ -164,12 +165,12 @@ defmodule Applet.Api do
 
   def wrap(fun) when is_function(fun, 0) do
     safe = fn -> Utils.safe(fun) |> log_unhandled() |> unwrap_safe() end
-    wrap_async(safe)
+    wrapper().(safe)
   end
 
   def wrap(fun) when is_function(fun, 1) do
     safe = fn arg -> Utils.safe(fun, arg) |> log_unhandled() |> unwrap_safe() end
-    wrap_async(safe)
+    wrapper().(safe)
   end
 
   def defer(fun) when is_function(fun, 0), do: defer(fun, [])
@@ -221,7 +222,7 @@ defmodule Applet.Api do
         end
 
         # return is either the try or the rescue block
-        # resulting expression in efter block is ignored
+        # resulting expression in after block is ignored
         try do
           Code.eval_string(code, bindings, file: route)
         rescue
@@ -233,7 +234,7 @@ defmodule Applet.Api do
         end
       end)
 
-    # possition is row or {row, col}
+    # position is row or {row, col}
     Enum.each(diagnostics, fn
       %{severity: :warning, position: p, message: m, file: f} ->
         Logger.warning(route: route, severity: :warning, position: p, message: m, file: f)
@@ -323,10 +324,30 @@ defmodule Applet.Api do
   end
 
   defp wrap_async(fun) when is_function(fun, 0) do
+    # for extensions
+    ext = Process.get(:__ext__)
+    par = self()
+
+    fun = fn ->
+      Process.put(:__ext__, ext)
+      Process.put(:__par__, par)
+      fun.()
+    end
+
     wrapper().(fun)
   end
 
   defp wrap_async(fun) when is_function(fun, 1) do
+    # for extensions
+    ext = Process.get(:__ext__)
+    par = self()
+
+    fun = fn arg ->
+      Process.put(:__ext__, ext)
+      Process.put(:__par__, par)
+      fun.(arg)
+    end
+
     wrapper().(fun)
   end
 
