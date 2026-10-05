@@ -45,6 +45,7 @@ defmodule Applet.Api do
   def hostname_f(), do: Utils.hostname_f()
   def resolve(host), do: Utils.resolve(host)
   def receive(), do: receive(do: (msg -> msg))
+  def receive(msg), do: receive(do: (^msg -> :ok))
   def inspect?(term) when is_binary(term), do: term
   def inspect?(term), do: inspect(term, @inspect)
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
