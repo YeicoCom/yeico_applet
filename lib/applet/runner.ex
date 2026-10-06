@@ -34,7 +34,7 @@ defmodule Applet.Runner do
           par = self()
 
           Task.Supervisor.async(tasks, fn ->
-            Multiple.register!({:applet_async, route}, tag: tag, par: par)
+            Multiple.register!({:applet_async, route}, par: par, tag: tag)
             Process.put(:__tag__, tag)
             fun.()
           end)
