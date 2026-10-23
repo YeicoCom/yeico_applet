@@ -29,7 +29,7 @@ defmodule Applet.Shared do
     Agent.get(__MODULE__, &Map.get(&1, key, def))
   end
 
-  def put(map) do
+  def put(map) when is_map(map) do
     Agent.update(__MODULE__, fn _ -> map end)
   end
 
