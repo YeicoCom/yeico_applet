@@ -46,8 +46,6 @@ defmodule Applet.Api do
   def resolve(host), do: Utils.resolve(host)
   def receive(), do: receive(do: (msg -> msg))
   def receive(msg), do: receive(do: (^msg -> :ok))
-  def inspect?(term) when is_binary(term), do: term
-  def inspect?(term), do: inspect(term, @inspect)
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
   def swait(task = %Task{}), do: Utils.await(task)
@@ -67,6 +65,16 @@ defmodule Applet.Api do
     |> Enum.to_list()
     |> is_list()
   end
+
+  # IO.puts of non printable throws
+  def inspect?(term) when is_binary(term) do
+    case String.printable?(term) do
+      true -> term
+      _ -> inspect(term, @inspect)
+    end
+  end
+
+  def inspect?(term), do: inspect(term, @inspect)
 
   def subget!(key, opts \\ []) do
     Bus.subscribe!(key, Keyword.get(opts, :sarg))
@@ -296,16 +304,10 @@ defmodule Applet.Api do
   end
 
   # log with entry route
-  def log(type, msg) when is_binary(msg) do
-    line = "#{route()} #{inspect?(self())} #{msg}"
-    Applet.broadcast!(entry(), type, line)
-    # for |> Log.trace()
-    msg
-  end
-
+  # https://hexdocs.pm/elixir/Inspect.Opts.html
   def log(type, msg) do
-    # https://hexdocs.pm/elixir/Inspect.Opts.html
-    log(type, inspect?(msg))
+    line = "#{route()} #{inspect?(self())} #{inspect?(msg)}"
+    Applet.broadcast!(entry(), type, line)
     # for |> Log.trace()
     msg
   end
