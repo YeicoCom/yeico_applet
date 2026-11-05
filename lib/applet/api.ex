@@ -25,6 +25,7 @@ defmodule Applet.Api do
 
   # https://hexdocs.pm/elixir/Inspect.Opts.html
   @inspect [limit: :infinity, printable_limit: :infinity, width: :infinity]
+  @await 100
 
   def route(), do: call(:route)
   def entry(), do: call(:entry)
@@ -49,7 +50,7 @@ defmodule Applet.Api do
   def safe(fun) when is_function(fun, 0), do: Utils.safe(fun)
   def safe(fun, arg) when is_function(fun, 1), do: Utils.safe(fun, arg)
   def swait(task = %Task{}), do: Utils.await(task)
-  def await(fun) when is_function(fun, 0), do: await(fun, 100)
+  def await(fun) when is_function(fun, 0), do: await(fun, @await)
   def await(task = %Task{}), do: call({:await, task, :infinity})
   def await(task = %Task{}, toms), do: call({:await, task, toms})
 
@@ -66,15 +67,38 @@ defmodule Applet.Api do
     |> is_list()
   end
 
-  # IO.puts of non printable throws
-  def inspect?(term) when is_binary(term) do
-    case String.printable?(term) do
-      true -> term
-      _ -> inspect(term, @inspect)
+  def api() do
+    Process.get(:__api__)
+  end
+
+  def api(api) when is_function(api, 1) do
+    Process.put(:__api__, api)
+  end
+
+  def api(entry) when is_binary(entry) do
+    Process.put(:__api__, fn _ -> entry end)
+  end
+
+  def printable(term, replacement \\ "") do
+    case is_binary(term) do
+      true ->
+        case String.printable?(term) do
+          false -> String.replace(term, ~r/\p{C}/u, replacement)
+          true -> term
+        end
+
+      false ->
+        inspect(term, @inspect)
     end
   end
 
-  def inspect?(term), do: inspect(term, @inspect)
+  # IO.puts of non printable throws
+  def inspect?(term) do
+    case is_binary(term) and String.printable?(term) do
+      false -> inspect(term, @inspect)
+      true -> term
+    end
+  end
 
   def subget!(key, opts \\ []) do
     Bus.subscribe!(key, Keyword.get(opts, :sarg))
@@ -221,7 +245,7 @@ defmodule Applet.Api do
   def evals(route, code, bindings \\ []) do
     {{result, bindings}, diagnostics} =
       Code.with_diagnostics(fn ->
-        %{api: api} = ctx = get_ctx()
+        %{api: api} = ctx = ctx()
 
         unless route == route() do
           Process.put(:__api__, fn
@@ -239,7 +263,7 @@ defmodule Applet.Api do
         catch
           error -> {{:catch, error, __STACKTRACE__}, []}
         after
-          put_ctx(ctx)
+          ctx(ctx)
         end
       end)
 
@@ -274,30 +298,30 @@ defmodule Applet.Api do
 
   # capture context for late wrapping
   def wrapper() do
-    ctx = get_ctx()
+    ctx = ctx()
 
     fn
       fun when is_function(fun, 0) ->
         fn ->
-          ptx = get_ctx()
-          put_ctx(ctx)
+          ptx = ctx()
+          ctx(ctx)
 
           try do
             fun.()
           after
-            put_ctx(ptx)
+            ctx(ptx)
           end
         end
 
       fun when is_function(fun, 1) ->
         fn arg ->
-          ptx = get_ctx()
-          put_ctx(ctx)
+          ptx = ctx()
+          ctx(ctx)
 
           try do
             fun.(arg)
           after
-            put_ctx(ptx)
+            ctx(ptx)
           end
         end
     end
@@ -312,19 +336,19 @@ defmodule Applet.Api do
     msg
   end
 
-  defp call(args), do: apply(Process.get(:__api__), [args])
-
   # https://elixirforum.com/t/how-to-keep-the-code-eval-string-environment-on-async-execution/71285
-  defp get_ctx() do
+  def ctx() do
     env = Process.get({:elixir, :eval_env})
     api = Process.get(:__api__)
     %{env: env, api: api}
   end
 
-  defp put_ctx(%{env: env, api: api}) do
+  def ctx(%{env: env, api: api}) do
     Process.put({:elixir, :eval_env}, env)
     Process.put(:__api__, api)
   end
+
+  defp call(args), do: apply(Process.get(:__api__), [args])
 
   defp wrap_async(fun) when is_function(fun, 0) do
     # for extensions
