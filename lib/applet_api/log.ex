@@ -1,4 +1,5 @@
 defmodule Applet.Api.Log do
+  def log(level, msg), do: Applet.Api.log(level, msg)
   def trace(msg), do: Applet.Api.log(:trace, msg)
   def debug(msg), do: Applet.Api.log(:debug, msg)
   def info(msg), do: Applet.Api.log(:info, msg)

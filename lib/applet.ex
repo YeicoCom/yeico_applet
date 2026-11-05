@@ -120,6 +120,14 @@ defmodule Applet do
     Store.keys()
   end
 
+  def started?(route) do
+    [] != Unique.lookup({:applet_main, route})
+  end
+
+  def stopped?(route) do
+    [] == Unique.lookup({:applet_main, route})
+  end
+
   def subscribe!(level, route, sargs \\ nil)
 
   def subscribe!(:trace, route, sargs) do
